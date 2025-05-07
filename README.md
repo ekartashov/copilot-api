@@ -53,7 +53,7 @@ docker build -t copilot-api .
      ```sh
      docker run -it --rm copilot-api sh -c '
          bun run dist/main.js auth && \
-         echo -n "GitHub Token: $(cat /root/.local/share/copilot-api/github_token)"'
+         echo "GitHub Token: $(cat /root/.local/share/copilot-api/github_token)"'
      ```
      Follow the prompts. The token will be displayed at the end, which you can then use for subsequent runs with the `-e GH_TOKEN` flag.
 
@@ -81,7 +81,7 @@ podman build -t copilot-api .
      ```sh
      podman run -it --rm copilot-api sh -c '
          bun run dist/main.js auth && \
-         echo -n "GitHub Token: $(cat /root/.local/share/copilot-api/github_token)"'
+         echo "GitHub Token: $(cat /root/.local/share/copilot-api/github_token)"'
      ```
      Follow the prompts. The token will be displayed at the end, which you can then use for subsequent runs with the `-e GH_TOKEN` flag.
 
