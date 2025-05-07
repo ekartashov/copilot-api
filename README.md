@@ -42,18 +42,20 @@ docker build -t copilot-api .
 **2. Run the Docker Container:**
    - **Without `GH_TOKEN` (will attempt auth flow on first run if token not found):**
      ```sh
-     docker run -p 4141:4141 copilot-api
+     docker run --init -it -p 4141:4141 copilot-api
      ```
    - **With `GH_TOKEN` for persistency (Recommended):**
      If you've generated a `GH_TOKEN` (see [Generating `GH_TOKEN`](#generating-gh_token-optional-but-recommended-for-dockerpodman)), use it:
      ```sh
-     docker run -e GH_TOKEN="YOUR_GH_TOKEN_HERE" -p 4141:4141 copilot-api
+     docker run --init -it -e GH_TOKEN="YOUR_GH_TOKEN_HERE" -p 4141:4141 copilot-api
      ```
    - **To run the authentication flow directly inside a Docker container (if you haven't generated a token yet):**
      ```sh
-     docker run -it --rm copilot-api sh -c "bun run dist/main.js auth && cat /root/.local/share/copilot-api/github_token && echo ''"
+     docker run -it --rm copilot-api sh -c '
+         bun run dist/main.js auth && \
+         echo -n "GitHub Token: $(cat /root/.local/share/copilot-api/github_token)"'
      ```
-     Follow the prompts. The token will be displayed, which you can then use for subsequent runs with the `-e GH_TOKEN` flag.
+     Follow the prompts. The token will be displayed at the end, which you can then use for subsequent runs with the `-e GH_TOKEN` flag.
 
 ## Using with Podman
 
@@ -68,18 +70,20 @@ podman build -t copilot-api .
 **2. Run the Podman Container:**
    - **Without `GH_TOKEN` (will attempt auth flow on first run if token not found):**
      ```sh
-     podman run -p 4141:4141 copilot-api
+     podman run --init -it -p 4141:4141 copilot-api
      ```
    - **With `GH_TOKEN` for persistency (Recommended):**
      If you've generated a `GH_TOKEN` (see [Generating `GH_TOKEN`](#generating-gh_token-optional-but-recommended-for-dockerpodman)), use it:
      ```sh
-     podman run -e GH_TOKEN="YOUR_GH_TOKEN_HERE" -p 4141:4141 copilot-api
+     podman run --init -it -e GH_TOKEN="YOUR_GH_TOKEN_HERE" -p 4141:4141 copilot-api
      ```
    - **To run the authentication flow directly inside a Podman container (if you haven't generated a token yet):**
      ```sh
-     podman run -it --rm copilot-api sh -c "bun run dist/main.js auth && cat /root/.local/share/copilot-api/github_token && echo ''"
+     podman run -it --rm copilot-api sh -c '
+         bun run dist/main.js auth && \
+         echo -n "GitHub Token: $(cat /root/.local/share/copilot-api/github_token)"'
      ```
-     Follow the prompts to get your `GH_TOKEN`.
+     Follow the prompts. The token will be displayed at the end, which you can then use for subsequent runs with the `-e GH_TOKEN` flag.
 
 ## Using with `npx`
 
