@@ -183,6 +183,42 @@ bun run dev
 bun run start
 ```
 
+## Testing
+
+This project includes a comprehensive testing framework built with Bun's native testing capabilities. The test suite covers unit tests for utilities and core functionality, as well as integration tests for API routes.
+
+### Running Tests
+
+```sh
+# Run all tests
+bun test
+
+# Run tests in watch mode (automatically re-run on file changes)
+bun run test:watch
+
+# Run tests with coverage report
+bun run test:coverage
+
+# Run tests in CI mode (for automated testing)
+bun run test:ci
+```
+
+### Test Structure
+
+- **`test/lib/`** - Unit tests for library functions and utilities
+- **`test/routes/`** - Integration tests for API endpoints
+- **`test/setup.ts`** - Global test configuration and utilities
+- **`test/README.md`** - Detailed testing documentation
+
+### Coverage
+
+The project aims for high test coverage with a minimum threshold of 80%. Coverage reports are generated in multiple formats:
+- HTML report: `coverage/index.html`
+- LCOV format: `coverage/lcov.info`
+- Text summary in terminal
+
+For detailed testing documentation, see [`docs/TESTING.md`](docs/TESTING.md) and [`test/README.md`](test/README.md).
+
 ## Usage Tips
 
 - Consider using free models (e.g., Gemini, Mistral, Openrouter) as the `weak-model`

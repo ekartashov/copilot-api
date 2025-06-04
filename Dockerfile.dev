@@ -1,0 +1,24 @@
+# Development Dockerfile for source code usage
+FROM docker.io/oven/bun:alpine
+
+WORKDIR /app
+
+# Install development dependencies
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+
+# Create volume mount point for source code
+VOLUME ["/app/src"]
+
+# Create directory for token storage with proper permissions
+RUN mkdir -p /root/.local/share/copilot-api/ && \
+    chmod 755 /root/.local/share/copilot-api/
+
+# Expose the default port
+EXPOSE 4141
+
+# Set environment variables for development
+ENV NODE_ENV=development
+
+# Default command for development (can be overridden)
+CMD ["bun", "run", "dev"]

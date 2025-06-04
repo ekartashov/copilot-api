@@ -1,0 +1,18 @@
+[test]
+# Test configuration for Bun
+coverage = true
+timeout = 30000
+bail = false
+
+# Test file patterns
+preload = ["./test/setup.ts"]
+
+# Coverage settings
+coverage-dir = "./coverage"
+coverage-reporter = ["text", "lcov", "html"]
+coverage-threshold = 80
+
+[install]
+# Install configuration
+frozen-lockfile = true
+production = false

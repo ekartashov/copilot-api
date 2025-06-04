@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Development service using source code
+  copilot-api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "4141:4141"
+    volumes:
+      - ./src:/app/src:ro
+      - ./package.json:/app/package.json:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsup.config.ts:/app/tsup.config.ts:ro
+      - copilot-tokens:/root/.local/share/copilot-api
+    environment:
+      - NODE_ENV=development
+      - GH_TOKEN=${GH_TOKEN}
+      - GH_TOKENS=${GH_TOKENS}
+    profiles:
+      - dev
+
+  # Production service using built source
+  copilot-api-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - GH_TOKEN=${GH_TOKEN}
+        - GH_TOKENS=${GH_TOKENS}
+    ports:
+      - "4141:4141"
+    volumes:
+      - copilot-tokens:/root/.local/share/copilot-api
+    environment:
+      - NODE_ENV=production
+      - GH_TOKEN=${GH_TOKEN}
+      - GH_TOKENS=${GH_TOKENS}
+    profiles:
+      - prod
+
+  # NPX-based service using published package
+  copilot-api-npx:
+    build:
+      context: .
+      dockerfile: Dockerfile.npx
+    ports:
+      - "4141:4141"
+    volumes:
+      - copilot-tokens:/root/.local/share/copilot-api
+    environment:
+      - NODE_ENV=production
+      - GH_TOKEN=${GH_TOKEN}
+      - GH_TOKENS=${GH_TOKENS}
+    profiles:
+      - npx
+
+volumes:
+  copilot-tokens:
+    driver: local

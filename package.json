@@ -29,7 +29,11 @@
     "prepack": "bun run build",
     "prepare": "simple-git-hooks",
     "release": "bumpp && bun publish --access public",
-    "start": "NODE_ENV=production bun run ./src/main.ts"
+    "start": "NODE_ENV=production bun run ./src/main.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
+    "test:ci": "bun test --coverage --reporter=json"
   },
   "simple-git-hooks": {
     "pre-commit": "bunx lint-staged"
@@ -55,7 +59,14 @@
     "lint-staged": "^16.1.0",
     "prettier-plugin-packagejson": "^2.5.15",
     "simple-git-hooks": "^2.13.0",
+<<<<<<< HEAD
     "tsup": "^8.5.0",
     "typescript": "^5.8.3"
+=======
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3",
+    "@types/node": "^20.11.0",
+    "bun-types": "^1.0.0"
+>>>>>>> 7f5043b (test: Add testing framework & Docs)
   }
 }

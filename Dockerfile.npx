@@ -1,0 +1,23 @@
+# Optimized Dockerfile for npx package usage
+FROM docker.io/node:alpine
+
+WORKDIR /app
+
+# Install the published package globally
+RUN npm install -g copilot-api@latest
+
+# Create directory for token storage with proper permissions
+RUN mkdir -p /root/.local/share/copilot-api/ && \
+    chmod 755 /root/.local/share/copilot-api/
+
+# Create volume for persistent token storage
+VOLUME ["/root/.local/share/copilot-api"]
+
+# Expose the default port
+EXPOSE 4141
+
+# Set environment variables
+ENV NODE_ENV=production
+
+# Default command to start the server
+CMD ["copilot-api", "start", "--vision"]
