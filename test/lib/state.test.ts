@@ -1,7 +1,21 @@
-import { test, expect, describe } from "bun:test"
+import { test, expect, describe, beforeEach } from "bun:test"
 import { state } from "../../src/lib/state"
 
 describe("State Management", () => {
+  beforeEach(() => {
+    // Reset state to defaults before each test
+    state.accountType = "individual"
+    state.manualApprove = false
+    state.rateLimitWait = false
+    state.visionEnabled = false
+    state.githubToken = undefined
+    state.copilotToken = undefined
+    state.models = undefined
+    state.vsCodeVersion = undefined
+    state.rateLimitSeconds = undefined
+    state.lastRequestTimestamp = undefined
+  })
+
   test("should have default state values", () => {
     expect(state.accountType).toBe("individual")
     expect(state.manualApprove).toBe(false)

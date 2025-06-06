@@ -1,4 +1,4 @@
-import { test, expect, describe, mock, beforeEach } from "bun:test"
+import { test, expect, describe, mock, beforeEach, afterAll } from "bun:test"
 import { HTTPError } from "../../../src/lib/http-error"
 
 // Mock the state module
@@ -12,6 +12,8 @@ mock.module("~/lib/state", () => ({
 
 // Mock fetch globally
 const mockFetch = mock()
+// Store original fetch to restore later
+const originalFetch = global.fetch
 // @ts-ignore - Override global fetch for testing
 global.fetch = mockFetch
 
@@ -22,6 +24,14 @@ describe("getGitHubUser", () => {
   beforeEach(() => {
     mockFetch.mockClear()
     mockState.githubToken = "test-github-token"
+    // Ensure our mock is active
+    // @ts-ignore - Override global fetch for testing
+    global.fetch = mockFetch
+  })
+
+  // Restore original fetch after all tests
+  afterAll(() => {
+    global.fetch = originalFetch
   })
 
   test("should fetch GitHub user successfully", async () => {
@@ -56,10 +66,9 @@ describe("getGitHubUser", () => {
 
     mockFetch.mockResolvedValueOnce(errorResponse)
 
-    await expect(getGitHubUser()).rejects.toThrow(HTTPError)
-    
     try {
       await getGitHubUser()
+      expect.unreachable("Should have thrown an error")
     } catch (error) {
       expect(error).toBeInstanceOf(HTTPError)
       expect((error as HTTPError).message).toBe("Failed to get GitHub user")

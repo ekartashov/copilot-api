@@ -13,7 +13,9 @@ const mockFS = {
   }
 }
 
-mock.module("node:fs/promises", () => mockFS)
+mock.module("node:fs/promises", () => ({
+  default: mockFS
+}))
 
 // Import after mocking
 import { PATHS, ensurePaths } from "../../src/lib/paths"
