@@ -24,7 +24,11 @@ const mockGetGitHubUser = mock(() => Promise.resolve({
 
 const mockFS = {
   readFile: mock(() => Promise.resolve("existing-token")),
-  writeFile: mock(() => Promise.resolve())
+  writeFile: mock(() => Promise.resolve()),
+  default: {
+    readFile: mock(() => Promise.resolve("existing-token")),
+    writeFile: mock(() => Promise.resolve())
+  }
 }
 
 // Mock modules
@@ -44,7 +48,18 @@ mock.module("~/services/github/get-user", () => ({
   getGitHubUser: mockGetGitHubUser
 }))
 
+// Mock the fs module properly
 mock.module("node:fs/promises", () => mockFS)
+
+// Mock console to prevent actual logging during tests
+mock.module("consola", () => ({
+  default: {
+    start: mock(() => {}),
+    info: mock(() => {}),
+    debug: mock(() => {}),
+    error: mock(() => {}),
+  }
+}))
 
 // Import after mocking
 import { setupCopilotToken, setupGitHubToken } from "../../src/lib/token"
@@ -62,6 +77,14 @@ describe("Token Management", () => {
     mockGetGitHubUser.mockClear()
     mockFS.readFile.mockClear()
     mockFS.writeFile.mockClear()
+    mockFS.default.readFile.mockClear()
+    mockFS.default.writeFile.mockClear()
+    
+    // Reset mock implementations to defaults
+    mockFS.readFile.mockImplementation(() => Promise.resolve("existing-token"))
+    mockFS.writeFile.mockImplementation(() => Promise.resolve())
+    mockFS.default.readFile.mockImplementation(() => Promise.resolve("existing-token"))
+    mockFS.default.writeFile.mockImplementation(() => Promise.resolve())
   })
 
   afterEach(() => {
@@ -88,24 +111,24 @@ describe("Token Management", () => {
 
   describe("setupGitHubToken", () => {
     test("should use existing token when available", async () => {
-      mockFS.readFile.mockResolvedValueOnce("existing-github-token")
+      mockFS.default.readFile.mockResolvedValueOnce("existing-github-token")
       
       await setupGitHubToken()
       
-      expect(mockFS.readFile).toHaveBeenCalledTimes(1)
+      expect(mockFS.default.readFile).toHaveBeenCalledTimes(1)
       expect(state.githubToken).toBe("existing-github-token")
       expect(mockGetGitHubUser).toHaveBeenCalledTimes(1)
       expect(mockGetDeviceCode).not.toHaveBeenCalled()
     })
 
     test("should get new token when none exists", async () => {
-      mockFS.readFile.mockRejectedValueOnce(new Error("File not found"))
+      mockFS.default.readFile.mockRejectedValueOnce(new Error("File not found"))
       
       await setupGitHubToken()
       
       expect(mockGetDeviceCode).toHaveBeenCalledTimes(1)
       expect(mockPollAccessToken).toHaveBeenCalledTimes(1)
-      expect(mockFS.writeFile).toHaveBeenCalledWith(
+      expect(mockFS.default.writeFile).toHaveBeenCalledWith(
         expect.any(String),
         "mock-github-token"
       )
@@ -114,7 +137,7 @@ describe("Token Management", () => {
     })
 
     test("should force new token when force option is true", async () => {
-      mockFS.readFile.mockResolvedValueOnce("existing-token")
+      mockFS.default.readFile.mockResolvedValueOnce("existing-token")
       
       await setupGitHubToken({ force: true })
       
@@ -124,14 +147,14 @@ describe("Token Management", () => {
     })
 
     test("should handle authentication errors", async () => {
-      mockFS.readFile.mockRejectedValueOnce(new Error("File not found"))
+      mockFS.default.readFile.mockRejectedValueOnce(new Error("File not found"))
       mockGetDeviceCode.mockRejectedValueOnce(new Error("Network error"))
       
       await expect(setupGitHubToken()).rejects.toThrow("Network error")
     })
 
     test("should handle user info fetch errors", async () => {
-      mockFS.readFile.mockResolvedValueOnce("existing-token")
+      mockFS.default.readFile.mockResolvedValueOnce("existing-token")
       mockGetGitHubUser.mockRejectedValueOnce(new Error("User fetch failed"))
       
       await expect(setupGitHubToken()).rejects.toThrow("User fetch failed")
@@ -140,22 +163,22 @@ describe("Token Management", () => {
 
   describe("Token persistence", () => {
     test("should write token to correct file path", async () => {
-      mockFS.readFile.mockRejectedValueOnce(new Error("File not found"))
+      mockFS.default.readFile.mockRejectedValueOnce(new Error("File not found"))
       
       await setupGitHubToken()
       
-      expect(mockFS.writeFile).toHaveBeenCalledWith(
+      expect(mockFS.default.writeFile).toHaveBeenCalledWith(
         expect.stringContaining("github_token"),
         "mock-github-token"
       )
     })
 
     test("should read token from correct file path", async () => {
-      mockFS.readFile.mockResolvedValueOnce("existing-token")
+      mockFS.default.readFile.mockResolvedValueOnce("existing-token")
       
       await setupGitHubToken()
       
-      expect(mockFS.readFile).toHaveBeenCalledWith(
+      expect(mockFS.default.readFile).toHaveBeenCalledWith(
         expect.stringContaining("github_token"),
         "utf8"
       )
