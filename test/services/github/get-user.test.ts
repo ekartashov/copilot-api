@@ -10,12 +10,11 @@ mock.module("~/lib/state", () => ({
   state: mockState
 }))
 
-// Mock fetch globally
+// Create a proper fetch mock
 const mockFetch = mock()
+
 // Store original fetch to restore later
-const originalFetch = global.fetch
-// @ts-ignore - Override global fetch for testing
-global.fetch = mockFetch
+const originalFetch = globalThis.fetch
 
 // Import after mocking
 import { getGitHubUser } from "../../../src/services/github/get-user"
@@ -24,14 +23,13 @@ describe("getGitHubUser", () => {
   beforeEach(() => {
     mockFetch.mockClear()
     mockState.githubToken = "test-github-token"
-    // Ensure our mock is active
-    // @ts-ignore - Override global fetch for testing
-    global.fetch = mockFetch
+    // Override global fetch with proper type assertion
+    ;(globalThis as any).fetch = mockFetch
   })
 
   // Restore original fetch after all tests
   afterAll(() => {
-    global.fetch = originalFetch
+    ;(globalThis as any).fetch = originalFetch
   })
 
   test("should fetch GitHub user successfully", async () => {

@@ -7,13 +7,15 @@ const mockGetCopilotToken = mock(() => Promise.resolve({
   refresh_in: 3600
 }))
 
-const mockGetDeviceCode = mock(() => Promise.resolve({
+const mockDeviceCode = {
   device_code: "mock-device-code",
   user_code: "MOCK-1234",
   verification_uri: "https://github.com/login/device",
   expires_in: 900,
   interval: 5
-}))
+}
+
+const mockGetDeviceCode = mock(() => Promise.resolve(mockDeviceCode))
 
 const mockPollAccessToken = mock(() => Promise.resolve("mock-github-token"))
 
@@ -22,10 +24,16 @@ const mockGetGitHubUser = mock(() => Promise.resolve({
   id: 12345
 }))
 
+// Create fs mocks
 const mockFS = {
   readFile: mock(() => Promise.resolve("existing-token")),
   writeFile: mock(() => Promise.resolve())
 }
+
+// Mock the fs module at the top level BEFORE any imports
+mock.module("node:fs/promises", () => ({
+  default: mockFS
+}))
 
 // Mock the paths module to avoid fs calls during import
 mock.module("~/lib/paths", () => ({
@@ -36,7 +44,7 @@ mock.module("~/lib/paths", () => ({
   ensurePaths: mock(() => Promise.resolve())
 }))
 
-// Mock modules
+// Mock service modules
 mock.module("~/services/github/get-copilot-token", () => ({
   getCopilotToken: mockGetCopilotToken
 }))
@@ -51,11 +59,6 @@ mock.module("~/services/github/poll-access-token", () => ({
 
 mock.module("~/services/github/get-user", () => ({
   getGitHubUser: mockGetGitHubUser
-}))
-
-// Mock the fs module properly with default export
-mock.module("node:fs/promises", () => ({
-  default: mockFS
 }))
 
 // Mock console to prevent actual logging during tests
@@ -125,18 +128,27 @@ describe("Token Management", () => {
     })
 
     test("should get new token when none exists", async () => {
-      mockFS.readFile.mockRejectedValueOnce(new Error("File not found"))
+      mockFS.readFile.mockImplementationOnce(() => Promise.reject(new Error("File not found")))
+      mockGetDeviceCode.mockResolvedValueOnce(mockDeviceCode)
+      mockPollAccessToken.mockResolvedValueOnce("mock-github-token")
+      mockGetGitHubUser.mockResolvedValueOnce({ login: "test-user", id: 12345 })
       
-      await setupGitHubToken()
-      
-      expect(mockGetDeviceCode).toHaveBeenCalledTimes(1)
-      expect(mockPollAccessToken).toHaveBeenCalledTimes(1)
-      expect(mockFS.writeFile).toHaveBeenCalledWith(
-        expect.any(String),
-        "mock-github-token"
-      )
-      expect(state.githubToken).toBe("mock-github-token")
-      expect(mockGetGitHubUser).toHaveBeenCalledTimes(1)
+      try {
+        await setupGitHubToken()
+        
+        expect(mockGetDeviceCode).toHaveBeenCalledTimes(1)
+        expect(mockPollAccessToken).toHaveBeenCalledWith(mockDeviceCode)
+        expect(mockFS.writeFile).toHaveBeenCalledWith(
+          expect.stringContaining("github_token"),
+          "mock-github-token"
+        )
+        expect(state.githubToken).toBe("mock-github-token")
+        expect(mockGetGitHubUser).toHaveBeenCalledWith()
+      } catch (error) {
+        // If we get here, the function didn't handle the readFile error properly
+        console.error("setupGitHubToken threw:", error)
+        throw error
+      }
     })
 
     test("should force new token when force option is true", async () => {
@@ -150,10 +162,11 @@ describe("Token Management", () => {
     })
 
     test("should handle authentication errors", async () => {
-      mockFS.readFile.mockRejectedValueOnce(new Error("File not found"))
+      mockFS.readFile.mockImplementationOnce(() => Promise.reject(new Error("File not found")))
       mockGetDeviceCode.mockRejectedValueOnce(new Error("Network error"))
       
       await expect(setupGitHubToken()).rejects.toThrow("Network error")
+      expect(mockGetDeviceCode).toHaveBeenCalledTimes(1)
     })
 
     test("should handle user info fetch errors", async () => {
@@ -166,13 +179,16 @@ describe("Token Management", () => {
 
   describe("Token persistence", () => {
     test("should write token to correct file path", async () => {
-      mockFS.readFile.mockRejectedValueOnce(new Error("File not found"))
+      mockFS.readFile.mockImplementationOnce(() => Promise.reject(new Error("File not found")))
+      mockGetDeviceCode.mockResolvedValueOnce(mockDeviceCode)
+      mockPollAccessToken.mockResolvedValueOnce("test-token")
+      mockGetGitHubUser.mockResolvedValueOnce({ login: "test-user", id: 12345 })
       
       await setupGitHubToken()
       
       expect(mockFS.writeFile).toHaveBeenCalledWith(
         expect.stringContaining("github_token"),
-        "mock-github-token"
+        "test-token"
       )
     })
 
