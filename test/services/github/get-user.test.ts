@@ -1,4 +1,4 @@
-import { test, expect, describe, mock, beforeEach, afterAll } from "bun:test"
+import { test, expect, describe, mock, beforeEach, afterEach, spyOn } from "bun:test"
 import { HTTPError } from "../../../src/lib/http-error"
 
 // Mock the state module
@@ -10,26 +10,19 @@ mock.module("~/lib/state", () => ({
   state: mockState
 }))
 
-// Create a proper fetch mock
-const mockFetch = mock()
-
-// Store original fetch to restore later
-const originalFetch = globalThis.fetch
-
 // Import after mocking
 import { getGitHubUser } from "../../../src/services/github/get-user"
 
 describe("getGitHubUser", () => {
+  let fetchSpy: any
+
   beforeEach(() => {
-    mockFetch.mockClear()
     mockState.githubToken = "test-github-token"
-    // Override global fetch with proper type assertion
-    ;(globalThis as any).fetch = mockFetch
+    fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(new Response())
   })
 
-  // Restore original fetch after all tests
-  afterAll(() => {
-    ;(globalThis as any).fetch = originalFetch
+  afterEach(() => {
+    fetchSpy.mockRestore()
   })
 
   test("should fetch GitHub user successfully", async () => {
@@ -39,14 +32,15 @@ describe("getGitHubUser", () => {
       name: "Test User"
     }
 
-    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify(mockUserData), {
+    fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify(mockUserData), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
 
     const result = await getGitHubUser()
 
-    expect(mockFetch).toHaveBeenCalledWith("https://api.github.com/user", {
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(fetchSpy).toHaveBeenCalledWith("https://api.github.com/user", {
       headers: {
         "authorization": "token test-github-token",
         "content-type": "application/json",
@@ -62,7 +56,7 @@ describe("getGitHubUser", () => {
       statusText: "Unauthorized"
     })
 
-    mockFetch.mockResolvedValueOnce(errorResponse)
+    fetchSpy.mockResolvedValueOnce(errorResponse)
 
     try {
       await getGitHubUser()
@@ -80,7 +74,7 @@ describe("getGitHubUser", () => {
       statusText: "Forbidden"
     })
 
-    mockFetch.mockResolvedValueOnce(errorResponse)
+    fetchSpy.mockResolvedValueOnce(errorResponse)
 
     await expect(getGitHubUser()).rejects.toThrow(HTTPError)
   })
@@ -91,7 +85,7 @@ describe("getGitHubUser", () => {
       statusText: "Not Found"
     })
 
-    mockFetch.mockResolvedValueOnce(errorResponse)
+    fetchSpy.mockResolvedValueOnce(errorResponse)
 
     await expect(getGitHubUser()).rejects.toThrow(HTTPError)
   })
@@ -102,19 +96,19 @@ describe("getGitHubUser", () => {
       statusText: "Internal Server Error"
     })
 
-    mockFetch.mockResolvedValueOnce(errorResponse)
+    fetchSpy.mockResolvedValueOnce(errorResponse)
 
     await expect(getGitHubUser()).rejects.toThrow(HTTPError)
   })
 
   test("should use correct API endpoint", async () => {
-    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ login: "test" }), {
+    fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ login: "test" }), {
       status: 200
     }))
 
     await getGitHubUser()
 
-    expect(mockFetch).toHaveBeenCalledWith(
+    expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining("https://api.github.com/user"),
       expect.any(Object)
     )
@@ -123,13 +117,13 @@ describe("getGitHubUser", () => {
   test("should include authorization header with token", async () => {
     mockState.githubToken = "custom-token-123"
     
-    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ login: "test" }), {
+    fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ login: "test" }), {
       status: 200
     }))
 
     await getGitHubUser()
 
-    expect(mockFetch).toHaveBeenCalledWith(
+    expect(fetchSpy).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         headers: expect.objectContaining({
@@ -140,13 +134,13 @@ describe("getGitHubUser", () => {
   })
 
   test("should include standard headers", async () => {
-    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ login: "test" }), {
+    fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ login: "test" }), {
       status: 200
     }))
 
     await getGitHubUser()
 
-    expect(mockFetch).toHaveBeenCalledWith(
+    expect(fetchSpy).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         headers: expect.objectContaining({
