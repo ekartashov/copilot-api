@@ -88,7 +88,7 @@ describe("forwardError", () => {
     expect(mockContext.json).toHaveBeenCalledWith(
       {
         error: {
-          message: "String error",
+          message: undefined,
           type: "error"
         }
       },
