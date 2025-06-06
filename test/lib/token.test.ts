@@ -1,4 +1,4 @@
-import { test, expect, describe, mock, beforeEach, afterEach } from "bun:test"
+import { test, expect, describe, mock, beforeEach, afterEach, spyOn } from "bun:test"
 import { state } from "../../src/lib/state"
 
 // Mock external dependencies
@@ -19,10 +19,6 @@ const mockGetDeviceCode = mock(() => Promise.resolve(mockDeviceCode))
 
 const mockPollAccessToken = mock(() => Promise.resolve("mock-github-token"))
 
-const mockGetGitHubUser = mock(() => Promise.resolve({
-  login: "test-user",
-  id: 12345
-}))
 
 // Create fs mocks
 const mockFS = {
@@ -57,9 +53,7 @@ mock.module("~/services/github/poll-access-token", () => ({
   pollAccessToken: mockPollAccessToken
 }))
 
-mock.module("~/services/github/get-user", () => ({
-  getGitHubUser: mockGetGitHubUser
-}))
+// Note: We'll mock getGitHubUser via spyOn in the test setup instead of global module mock
 
 // Mock console to prevent actual logging during tests
 mock.module("consola", () => ({
@@ -73,9 +67,12 @@ mock.module("consola", () => ({
 
 // Import after mocking
 import { setupCopilotToken, setupGitHubToken } from "../../src/lib/token"
+import { getGitHubUser } from "../../src/services/github/get-user"
 
 describe("Token Management", () => {
-  beforeEach(() => {
+  let getUserSpy: any
+  
+  beforeEach(async () => {
     // Reset state before each test
     state.githubToken = undefined
     state.copilotToken = undefined
@@ -84,18 +81,21 @@ describe("Token Management", () => {
     mockGetCopilotToken.mockClear()
     mockGetDeviceCode.mockClear()
     mockPollAccessToken.mockClear()
-    mockGetGitHubUser.mockClear()
     mockFS.readFile.mockClear()
     mockFS.writeFile.mockClear()
     
     // Reset mock implementations to defaults
     mockFS.readFile.mockImplementation(() => Promise.resolve("existing-token"))
     mockFS.writeFile.mockImplementation(() => Promise.resolve())
+    
+    // Spy on getGitHubUser instead of global module mock
+    getUserSpy = spyOn(await import("../../src/services/github/get-user"), "getGitHubUser")
+    getUserSpy.mockResolvedValue({ login: "test-user", id: 12345 })
   })
 
   afterEach(() => {
-    // Clear any intervals that might have been set (Bun doesn't have jest.clearAllTimers)
-    // Manual cleanup if needed
+    // Restore the spy to avoid interference with other tests
+    getUserSpy?.mockRestore()
   })
 
   describe("setupCopilotToken", () => {
@@ -123,7 +123,7 @@ describe("Token Management", () => {
       
       expect(mockFS.readFile).toHaveBeenCalledTimes(1)
       expect(state.githubToken).toBe("existing-github-token")
-      expect(mockGetGitHubUser).toHaveBeenCalledTimes(1)
+      expect(getUserSpy).toHaveBeenCalledTimes(1)
       expect(mockGetDeviceCode).not.toHaveBeenCalled()
     })
 
@@ -131,7 +131,7 @@ describe("Token Management", () => {
       mockFS.readFile.mockImplementationOnce(() => Promise.reject(new Error("File not found")))
       mockGetDeviceCode.mockResolvedValueOnce(mockDeviceCode)
       mockPollAccessToken.mockResolvedValueOnce("mock-github-token")
-      mockGetGitHubUser.mockResolvedValueOnce({ login: "test-user", id: 12345 })
+      getUserSpy.mockResolvedValueOnce({ login: "test-user", id: 12345 })
       
       try {
         await setupGitHubToken()
@@ -143,7 +143,7 @@ describe("Token Management", () => {
           "mock-github-token"
         )
         expect(state.githubToken).toBe("mock-github-token")
-        expect(mockGetGitHubUser).toHaveBeenCalledWith()
+        expect(getUserSpy).toHaveBeenCalledWith()
       } catch (error) {
         // If we get here, the function didn't handle the readFile error properly
         console.error("setupGitHubToken threw:", error)
@@ -171,7 +171,7 @@ describe("Token Management", () => {
 
     test("should handle user info fetch errors", async () => {
       mockFS.readFile.mockResolvedValueOnce("existing-token")
-      mockGetGitHubUser.mockRejectedValueOnce(new Error("User fetch failed"))
+      getUserSpy.mockRejectedValueOnce(new Error("User fetch failed"))
       
       await expect(setupGitHubToken()).rejects.toThrow("User fetch failed")
     })
@@ -182,7 +182,7 @@ describe("Token Management", () => {
       mockFS.readFile.mockImplementationOnce(() => Promise.reject(new Error("File not found")))
       mockGetDeviceCode.mockResolvedValueOnce(mockDeviceCode)
       mockPollAccessToken.mockResolvedValueOnce("test-token")
-      mockGetGitHubUser.mockResolvedValueOnce({ login: "test-user", id: 12345 })
+      getUserSpy.mockResolvedValueOnce({ login: "test-user", id: 12345 })
       
       await setupGitHubToken()
       
