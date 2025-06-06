@@ -41,7 +41,14 @@ export async function setupGitHubToken(
   options?: SetupGitHubTokenOptions,
 ): Promise<void> {
   try {
-    const githubToken = await readGithubToken()
+    let githubToken: string | null = null
+    
+    try {
+      githubToken = await readGithubToken()
+    } catch {
+      // File doesn't exist or can't be read - we'll get a new token
+      githubToken = null
+    }
 
     if (githubToken && !options?.force) {
       state.githubToken = githubToken
