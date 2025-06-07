@@ -1,104 +1,126 @@
-import { test, expect, describe, mock, beforeEach } from "bun:test"
-
-// Mock getVSCodeVersion service
-const mockGetVSCodeVersion = mock(() => Promise.resolve("1.95.0"))
-
-mock.module("../../src/services/get-vscode-version", () => ({
-  getVSCodeVersion: mockGetVSCodeVersion
-}))
-
-// Mock consola
-const mockConsola = {
-  info: mock(() => {})
-}
-mock.module("consola", () => ({
-  default: mockConsola
-}))
-
-// Mock state
-const mockState: any = {
-  vsCodeVersion: undefined
-}
-mock.module("../../src/lib/state", () => ({
-  state: mockState
-}))
-
-// Import after mocking
-import { cacheVSCodeVersion } from "../../src/lib/vscode-version"
+import { test, expect, describe, beforeEach, afterEach, spyOn } from "bun:test"
 
 describe("cacheVSCodeVersion", () => {
-  beforeEach(() => {
-    mockGetVSCodeVersion.mockClear()
-    mockConsola.info.mockClear()
-    mockState.vsCodeVersion = undefined
+  let getVSCodeVersionSpy: any
+  let consolaSpy: any
+  let originalState: any
+
+  beforeEach(async () => {
+    // Import modules dynamically to avoid module mock conflicts
+    const vscodeService = await import("../../src/services/get-vscode-version")
+    const consola = (await import("consola")).default
+    const { state } = await import("../../src/lib/state")
+    
+    // Store original state
+    originalState = state.vsCodeVersion
+    
+    // Create spies instead of module mocks
+    getVSCodeVersionSpy = spyOn(vscodeService, "getVSCodeVersion").mockImplementation(() => Promise.resolve("1.95.0"))
+    
+    // Spy on the consola mock (which may be a mock function from global mocks)
+    consolaSpy = spyOn(consola, "info")
+    
+    // Reset state
+    state.vsCodeVersion = undefined
+  })
+
+  afterEach(async () => {
+    // Restore spies
+    getVSCodeVersionSpy?.mockRestore()
+    consolaSpy?.mockRestore()
+    
+    // Restore original state
+    const { state } = await import("../../src/lib/state")
+    state.vsCodeVersion = originalState
   })
 
   test("should fetch VSCode version and cache it in state", async () => {
+    // Import cacheVSCodeVersion dynamically to ensure it uses current module state
+    const { cacheVSCodeVersion } = await import("../../src/lib/vscode-version")
+    
     const mockVersion = "1.95.0"
-    mockGetVSCodeVersion.mockResolvedValueOnce(mockVersion)
+    getVSCodeVersionSpy.mockResolvedValueOnce(mockVersion)
 
     await cacheVSCodeVersion()
 
-    expect(mockGetVSCodeVersion).toHaveBeenCalledTimes(1)
-    expect(mockState.vsCodeVersion).toBe(mockVersion)
+    expect(getVSCodeVersionSpy).toHaveBeenCalledTimes(1)
+    
+    const { state } = await import("../../src/lib/state")
+    expect(state.vsCodeVersion).toBe(mockVersion)
   })
 
   test("should log VSCode version information", async () => {
+    const { cacheVSCodeVersion } = await import("../../src/lib/vscode-version")
+    
     const mockVersion = "1.94.2"
-    mockGetVSCodeVersion.mockResolvedValueOnce(mockVersion)
+    getVSCodeVersionSpy.mockResolvedValueOnce(mockVersion)
 
     await cacheVSCodeVersion()
 
-    expect(mockConsola.info).toHaveBeenCalledTimes(1)
-    expect(mockConsola.info).toHaveBeenCalledWith("Using VSCode version: 1.94.2")
+    expect(consolaSpy).toHaveBeenCalledTimes(1)
+    expect(consolaSpy).toHaveBeenCalledWith("Using VSCode version: 1.94.2")
   })
 
   test("should handle different version formats", async () => {
+    const { cacheVSCodeVersion } = await import("../../src/lib/vscode-version")
+    
     const mockVersion = "1.93.1-insider"
-    mockGetVSCodeVersion.mockResolvedValueOnce(mockVersion)
+    getVSCodeVersionSpy.mockResolvedValueOnce(mockVersion)
 
     await cacheVSCodeVersion()
 
-    expect(mockState.vsCodeVersion).toBe(mockVersion)
-    expect(mockConsola.info).toHaveBeenCalledWith("Using VSCode version: 1.93.1-insider")
+    const { state } = await import("../../src/lib/state")
+    expect(state.vsCodeVersion).toBe(mockVersion)
+    expect(consolaSpy).toHaveBeenCalledWith("Using VSCode version: 1.93.1-insider")
   })
 
   test("should handle empty version string", async () => {
+    const { cacheVSCodeVersion } = await import("../../src/lib/vscode-version")
+    
     const mockVersion = ""
-    mockGetVSCodeVersion.mockResolvedValueOnce(mockVersion)
+    getVSCodeVersionSpy.mockResolvedValueOnce(mockVersion)
 
     await cacheVSCodeVersion()
 
-    expect(mockState.vsCodeVersion).toBe(mockVersion)
-    expect(mockConsola.info).toHaveBeenCalledWith("Using VSCode version: ")
+    const { state } = await import("../../src/lib/state")
+    expect(state.vsCodeVersion).toBe(mockVersion)
+    expect(consolaSpy).toHaveBeenCalledWith("Using VSCode version: ")
   })
 
   test("should propagate errors from getVSCodeVersion", async () => {
+    const { cacheVSCodeVersion } = await import("../../src/lib/vscode-version")
+    
     const mockError = new Error("Failed to get VSCode version")
-    mockGetVSCodeVersion.mockRejectedValueOnce(mockError)
+    getVSCodeVersionSpy.mockRejectedValueOnce(mockError)
 
     await expect(cacheVSCodeVersion()).rejects.toThrow("Failed to get VSCode version")
     
-    expect(mockState.vsCodeVersion).toBeUndefined()
-    expect(mockConsola.info).not.toHaveBeenCalled()
+    const { state } = await import("../../src/lib/state")
+    expect(state.vsCodeVersion).toBeUndefined()
+    expect(consolaSpy).not.toHaveBeenCalled()
   })
 
   test("should overwrite previous version cache", async () => {
+    const { cacheVSCodeVersion } = await import("../../src/lib/vscode-version")
+    const { state } = await import("../../src/lib/state")
+    
     // Set initial state
-    mockState.vsCodeVersion = "1.90.0"
+    state.vsCodeVersion = "1.90.0"
 
     const newVersion = "1.95.0"
-    mockGetVSCodeVersion.mockResolvedValueOnce(newVersion)
+    getVSCodeVersionSpy.mockResolvedValueOnce(newVersion)
 
     await cacheVSCodeVersion()
 
-    expect(mockState.vsCodeVersion).toBe(newVersion)
-    expect(mockState.vsCodeVersion).not.toBe("1.90.0")
+    expect(state.vsCodeVersion).toBe(newVersion)
+    expect(state.vsCodeVersion).not.toBe("1.90.0")
   })
 
   test("should return void", async () => {
+    const { cacheVSCodeVersion } = await import("../../src/lib/vscode-version")
+    
     const mockVersion = "1.95.0"
-    mockGetVSCodeVersion.mockResolvedValueOnce(mockVersion)
+    getVSCodeVersionSpy.mockResolvedValueOnce(mockVersion)
 
     const result = await cacheVSCodeVersion()
 
@@ -106,22 +128,28 @@ describe("cacheVSCodeVersion", () => {
   })
 
   test("should handle version with build metadata", async () => {
+    const { cacheVSCodeVersion } = await import("../../src/lib/vscode-version")
+    
     const mockVersion = "1.95.0+build.123"
-    mockGetVSCodeVersion.mockResolvedValueOnce(mockVersion)
+    getVSCodeVersionSpy.mockResolvedValueOnce(mockVersion)
 
     await cacheVSCodeVersion()
 
-    expect(mockState.vsCodeVersion).toBe(mockVersion)
-    expect(mockConsola.info).toHaveBeenCalledWith("Using VSCode version: 1.95.0+build.123")
+    const { state } = await import("../../src/lib/state")
+    expect(state.vsCodeVersion).toBe(mockVersion)
+    expect(consolaSpy).toHaveBeenCalledWith("Using VSCode version: 1.95.0+build.123")
   })
 
   test("should handle pre-release versions", async () => {
+    const { cacheVSCodeVersion } = await import("../../src/lib/vscode-version")
+    
     const mockVersion = "1.96.0-alpha.1"
-    mockGetVSCodeVersion.mockResolvedValueOnce(mockVersion)
+    getVSCodeVersionSpy.mockResolvedValueOnce(mockVersion)
 
     await cacheVSCodeVersion()
 
-    expect(mockState.vsCodeVersion).toBe(mockVersion)
-    expect(mockConsola.info).toHaveBeenCalledWith("Using VSCode version: 1.96.0-alpha.1")
+    const { state } = await import("../../src/lib/state")
+    expect(state.vsCodeVersion).toBe(mockVersion)
+    expect(consolaSpy).toHaveBeenCalledWith("Using VSCode version: 1.96.0-alpha.1")
   })
 })

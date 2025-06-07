@@ -4,7 +4,8 @@ import { HTTPError } from "../../src/lib/http-error"
 
 // Mock consola
 const mockConsola = {
-  error: mock(() => {})
+  error: mock(() => {}),
+  info: mock(() => {})
 }
 mock.module("consola", () => ({
   default: mockConsola
