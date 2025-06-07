@@ -3,7 +3,8 @@ import { HTTPError } from "../../src/lib/http-error"
 
 // Mock consola
 const mockConsola = {
-  prompt: mock(() => Promise.resolve(true))
+  prompt: mock(() => Promise.resolve(true)),
+  info: mock(() => {})
 }
 
 mock.module("consola", () => ({
