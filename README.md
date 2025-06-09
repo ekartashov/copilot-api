@@ -1,239 +1,264 @@
-# Copilot API
+# 📛 Copilot API
 
-⚠️ **EDUCATIONAL PURPOSE ONLY** ⚠️
-This project is a reverse-engineered implementation of the GitHub Copilot API created for educational purposes only. It is not officially supported by GitHub and should not be used in production environments.
+⚠️ **EDUCATIONAL PURPOSE ONLY** ⚠️  
+This project is a reverse-engineered implementation of the GitHub Copilot API created for educational purposes only. It is not officially supported by GitHub and should not be used in production environments. Please be aware that using this proxy may violate GitHub's Terms of Service.
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/E1E519XS7W)
+A TypeScript/Node.js proxy server that wraps GitHub Copilot's API to make it OpenAI-compatible, enabling integration with AI assistants, local interfaces, and development tools that expect OpenAI's API format.
 
-## Project Overview
+This is a fork of [ericc-ch/copilot-api](https://github.com/ericc-ch/copilot-api) that provides additional features while staying in sync with the upstream project. Features may be contributed back to the original project.
 
-A wrapper around GitHub Copilot API to make it OpenAI compatible, making it usable for other tools like AI assistants, local interfaces, and development utilities.
+## 🚀 Features
 
-## Demo
+- **OpenAI API Compatibility**: Translates OpenAI-style requests to GitHub Copilot format
+- **GitHub OAuth Authentication**: Secure device flow authentication with GitHub
+- **Rate Limiting**: Built-in request throttling with configurable limits
+- **Business Account Support**: Compatible with both individual and business Copilot subscriptions  
+- **Multiple Installation Methods**: Run via npx, Docker/Podman, or from source
+- **Manual Request Approval**: Optional interactive mode for request review
+- **Vision Support**: Handle image inputs in chat completions
+- **Comprehensive Testing**: 80%+ test coverage goal with unit and integration tests
+- **Stream & Non-Stream Support**: Compatible with both streaming and non-streaming responses
 
-https://github.com/user-attachments/assets/7654b383-669d-4eb9-b23c-06d7aefee8c5
+## 📦 Installation
 
-## Prerequisites
+### Using npx (Recommended)
 
-- GitHub account with **Copilot subscription** (Individual or Business)
-- One of the following runtime environments:
-    - **Bun** (>= 1.2.x) for running from source or local development.
-    - **Docker** or **Podman** for containerized deployment.
-    - **Node.js** and **`npm`** (for using **`npx`**) if you prefer running directly without cloning the repository.
+Run directly without cloning the repository:
 
-
-## Installation
-
-To install dependencies, run:
-
-```sh
-bun install
-```
-
-## Using with Docker
-
-First, ensure you have Docker installed.
-
-**1. Build the Docker Image:**
-```sh
-docker build -t copilot-api .
-```
-
-**2. Run the Docker Container:**
-   - **Without `GH_TOKEN` (will attempt auth flow on first run if token not found):**
-     ```sh
-     docker run --init -it -p 4141:4141 copilot-api
-     ```
-   - **With `GH_TOKEN` for persistency (Recommended):**
-     If you've generated a `GH_TOKEN` (see [Generating `GH_TOKEN`](#generating-gh_token-optional-but-recommended-for-dockerpodman)), use it:
-     ```sh
-     docker run --init -it -e GH_TOKEN="YOUR_GH_TOKEN_HERE" -p 4141:4141 copilot-api
-     ```
-   - **To run the authentication flow directly inside a Docker container (if you haven't generated a token yet):**
-     ```sh
-     docker run -it --rm copilot-api sh -c '
-         bun run dist/main.js auth && \
-         echo "GitHub Token: $(cat /root/.local/share/copilot-api/github_token)"'
-     ```
-     Follow the prompts. The token will be displayed at the end, which you can then use for subsequent runs with the `-e GH_TOKEN` flag.
-
-## Using with Podman
-
-First, ensure you have Podman installed. The steps are very similar to Docker.
-
-**1. Build the Podman Image:**
-```sh
-podman build -t copilot-api .
-```
-*Note: If you intend to pass `GH_TOKEN` as a build argument (less common for runtime secrets), your Dockerfile/Containerfile would need to be set up to handle it. For runtime, environment variables are preferred.*
-
-**2. Run the Podman Container:**
-   - **Without `GH_TOKEN` (will attempt auth flow on first run if token not found):**
-     ```sh
-     podman run --init -it -p 4141:4141 copilot-api
-     ```
-   - **With `GH_TOKEN` for persistency (Recommended):**
-     If you've generated a `GH_TOKEN` (see [Generating `GH_TOKEN`](#generating-gh_token-optional-but-recommended-for-dockerpodman)), use it:
-     ```sh
-     podman run --init -it -e GH_TOKEN="YOUR_GH_TOKEN_HERE" -p 4141:4141 copilot-api
-     ```
-   - **To run the authentication flow directly inside a Podman container (if you haven't generated a token yet):**
-     ```sh
-     podman run -it --rm copilot-api sh -c '
-         bun run dist/main.js auth && \
-         echo "GitHub Token: $(cat /root/.local/share/copilot-api/github_token)"'
-     ```
-     Follow the prompts. The token will be displayed at the end, which you can then use for subsequent runs with the `-e GH_TOKEN` flag.
-
-## Using with `npx`
-
-If you have Node.js and npm installed, you can run the project directly using `npx` without cloning the repository.
-
-**Start the server:**
-```sh
+```bash
+# Start the server
 npx copilot-api@latest start
-```
 
-**With options (e.g., custom port):**
-```sh
+# Custom port
 npx copilot-api@latest start --port 8080
-```
 
-**For authentication only (to generate `GH_TOKEN`):**
-Refer to the [Generating `GH_TOKEN`](#generating-gh_token-optional-but-recommended-for-dockerpodman) section.
-```sh
+# Generate GitHub token only
 npx copilot-api@latest auth
 ```
 
-## Command Structure
+### Using Docker
 
-Copilot API now uses a subcommand structure with two main commands:
+```bash
+# Build the image
+docker build -t copilot-api .
 
-- `start`: Start the Copilot API server (default command). This command will also handle authentication if needed.
-- `auth`: Run GitHub authentication flow without starting the server. This is typically used if you need to generate a token for use with the `--github-token` option, especially in non-interactive environments.
+# Run without token (will prompt for auth)
+docker run --init -it -p 4141:4141 copilot-api
 
-## Command Line Options
+# Run with pre-generated token
+docker run --init -it -e GH_TOKEN="your_token_here" -p 4141:4141 copilot-api
 
-### Start Command Options
-
-The following command line options are available for the `start` command:
-
-| Option         | Description                                                                   | Default | Alias |
-| -------------- | ----------------------------------------------------------------------------- | ------- | ----- |
-| --port         | Port to listen on                                                             | 4141    | -p    |
-| --verbose      | Enable verbose logging                                                        | false   | -v    |
-| --business     | Use a business plan GitHub account                                            | false   | none  |
-| --manual       | Enable manual request approval                                                | false   | none  |
-| --rate-limit   | Rate limit in seconds between requests                                        | none    | -r    |
-| --wait         | Wait instead of error when rate limit is hit                                  | false   | -w    |
-| --github-token | Provide GitHub token directly (must be generated using the `auth` subcommand) | none    | -g    |
-
-### Auth Command Options
-
-| Option    | Description            | Default | Alias |
-| --------- | ---------------------- | ------- | ----- |
-| --verbose | Enable verbose logging | false   | -v    |
-
-## Example Usage
-
-Using with npx:
-
-```sh
-# Basic usage with start command
-npx copilot-api@latest start
-
-# Run on custom port with verbose logging
-npx copilot-api@latest start --port 8080 --verbose
-
-# Use with a Business GitHub account
-npx copilot-api@latest start --business
-
-# Enable manual approval for each request
-npx copilot-api@latest start --manual
-
-# Set rate limit to 30 seconds between requests
-npx copilot-api@latest start --rate-limit 30
-
-# Wait instead of error when rate limit is hit
-npx copilot-api@latest start --rate-limit 30 --wait
-
-# Provide GitHub token directly
-npx copilot-api@latest start --github-token ghp_YOUR_TOKEN_HERE
-
-# Run only the auth flow
-npx copilot-api@latest auth
-
-# Run auth flow with verbose logging
-npx copilot-api@latest auth --verbose
+# Generate token in container
+docker run -it --rm copilot-api sh -c '
+    bun run dist/main.js auth && \
+    echo "GitHub Token: $(cat /root/.local/share/copilot-api/github_token)"'
 ```
 
-## Running from Source
+### Using Podman
 
-The project can be run from source in several ways:
+```bash
+# Build the image
+podman build -t copilot-api .
 
-### Development Mode
+# Run without token (will prompt for auth)
+podman run --init -it -p 4141:4141 copilot-api
 
-```sh
+# Run with pre-generated token
+podman run --init -it -e GH_TOKEN="your_token_here" -p 4141:4141 copilot-api
+```
+
+### From Source
+
+Prerequisites: Bun >= 1.2.x
+
+```bash
+# Clone and install
+git clone https://github.com/ekartashov/copilot-api.git
+cd copilot-api
+bun install
+
+# Development mode
 bun run dev
-```
 
-### Production Mode
-
-```sh
+# Production mode
 bun run start
 ```
 
-## Testing
+## ⚙️ Configuration
 
-This project includes a comprehensive testing framework built with Bun's native testing capabilities. The test suite covers unit tests for utilities and core functionality, as well as integration tests for API routes.
+### Environment Variables
 
-### Running Tests
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GH_TOKEN` | Pre-generated GitHub token | None |
+| `NODE_ENV` | Environment mode | `development` |
 
-```sh
+### CLI Flags
+
+#### Start Command
+| Flag | Description | Default | Alias |
+|------|-------------|---------|-------|
+| `--port` | Port to listen on | `4141` | `-p` |
+| `--verbose` | Enable verbose logging | `false` | `-v` |
+| `--business` | Use business plan GitHub account | `false` | |
+| `--manual` | Enable manual request approval | `false` | |
+| `--rate-limit` | Rate limit seconds between requests | None | `-r` |
+| `--wait` | Wait instead of error on rate limit | `false` | `-w` |
+| `--github-token` | Provide GitHub token directly | None | `-g` |
+
+#### Auth Command
+| Flag | Description | Default | Alias |
+|------|-------------|---------|-------|
+| `--verbose` | Enable verbose logging | `false` | `-v` |
+
+## 🧪 Testing
+
+The project includes comprehensive testing with Bun's native test runner:
+
+```bash
 # Run all tests
 bun test
 
-# Run tests in watch mode (automatically re-run on file changes)
+# Watch mode (auto-rerun on changes)
 bun run test:watch
 
-# Run tests with coverage report
+# Coverage report
 bun run test:coverage
 
-# Run tests in CI mode (for automated testing)
+# CI mode
 bun run test:ci
 ```
 
 ### Test Structure
+- **`test/lib/`** - Unit tests for utilities and core functions
+- **`test/routes/`** - Integration tests for API endpoints  
+- **`test/services/`** - Service layer tests
+- **Coverage target**: 80%+ with HTML and LCOV reports
 
-- **`test/lib/`** - Unit tests for library functions and utilities
-- **`test/routes/`** - Integration tests for API endpoints
-- **`test/setup.ts`** - Global test configuration and utilities
-- **`test/README.md`** - Detailed testing documentation
+## 🔧 Usage Examples
 
-### Coverage
+### CLI Commands
 
-The project aims for high test coverage with a minimum threshold of 80%. Coverage reports are generated in multiple formats:
-- HTML report: `coverage/index.html`
-- LCOV format: `coverage/lcov.info`
-- Text summary in terminal
+```bash
+# Basic usage
+npx copilot-api@latest start
 
-For detailed testing documentation, see [`docs/TESTING.md`](docs/TESTING.md) and [`test/README.md`](test/README.md).
+# Custom port with verbose logging
+npx copilot-api@latest start --port 8080 --verbose
 
-## Usage Tips
+# Business account with rate limiting
+npx copilot-api@latest start --business --rate-limit 30
 
-- Consider using free models (e.g., Gemini, Mistral, Openrouter) as the `weak-model`
-- Use architect mode sparingly
-- Disable `yes-always` in your aider configuration
-- Be mindful that Claude 3.7 thinking mode consumes more tokens
-- Enable the `--manual` flag to review and approve each request before processing
-- If you have a GitHub Business account with Copilot, use the `--business` flag
+# Manual approval mode
+npx copilot-api@latest start --manual
 
-### Manual Request Approval
+# With rate limit waiting
+npx copilot-api@latest start --rate-limit 30 --wait
 
-When using the `--manual` flag, the server will prompt you to approve each incoming request:
-
-```
-? Accept incoming request? > (y/N)
+# Direct token usage
+npx copilot-api@latest start --github-token ghp_YOUR_TOKEN
 ```
 
-This helps you control usage and monitor requests in real-time.
+### API Usage
+
+Once running, use OpenAI-compatible endpoints:
+
+```bash
+# Chat completions
+curl -X POST http://localhost:4141/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [{"role": "user", "content": "Hello!"}],
+    "stream": false
+  }'
+
+# List available models  
+curl http://localhost:4141/models
+
+# Embeddings
+curl -X POST http://localhost:4141/embeddings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "text-embedding-ada-002",
+    "input": "Hello world"
+  }'
+```
+
+### Compatible with v1/ prefix
+All endpoints also work with `/v1/` prefix for broader tool compatibility:
+- `/v1/chat/completions`
+- `/v1/models` 
+- `/v1/embeddings`
+
+## 🔄 How It Works
+
+```mermaid
+graph TD
+  A[Client (e.g. AI Assistant)] -->|OpenAI-style request| B(Copilot API Proxy)
+  B --> C[Request Rewriter]
+  C --> D[GitHub Copilot Backend]
+  D --> E[Copilot Response]
+  E --> F[Response Translator]
+  F --> A
+  B -.-> G[Auth Layer (GitHub OAuth)]
+  G -->|Token| B
+  style B fill:#f9f,stroke:#333,stroke-width:2px
+  style D fill:#bbf,stroke:#333,stroke-width:1px
+  style G fill:#ffc,stroke:#333,stroke-width:1px
+```
+
+The proxy server:
+1. **Receives** OpenAI-format requests from clients
+2. **Authenticates** with GitHub using OAuth device flow
+3. **Translates** requests to GitHub Copilot's internal API format
+4. **Forwards** requests to GitHub's Copilot backend
+5. **Converts** responses back to OpenAI-compatible format
+6. **Returns** formatted responses to clients
+
+Key components:
+- **Request Handler**: Processes incoming requests and applies rate limiting
+- **Auth Layer**: Manages GitHub authentication and token refresh
+- **Translation Layer**: Converts between OpenAI and Copilot formats
+- **Response Streaming**: Supports both streaming and non-streaming responses
+
+## 📚 Documentation
+
+| Guide | Description |
+|-------|-------------|
+| **[Getting Started](docs/index.md)** | Quick setup and usage guide |
+| **[API Reference](docs/api.md)** | Complete OpenAI-compatible endpoint documentation |
+| **[CLI Guide](docs/cli.md)** | Command-line interface usage and options |
+| **[Configuration](docs/config.md)** | Environment variables and advanced settings |
+| **[Authentication](docs/auth.md)** | GitHub OAuth flow and token management |
+| **[Architecture](docs/architecture.md)** | Technical implementation and system design |
+| **[Deployment](docs/deployment.md)** | Production deployment for Docker/K8s/systemd |
+| **[Testing](docs/testing.md)** | Testing framework, patterns, and coverage |
+| **[Contributing](docs/contributing.md)** | Development workflow and contribution guidelines |
+
+> 💡 **New to the project?** Start with the [Getting Started Guide](docs/index.md) for a quick overview and setup instructions.
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](docs/contributing.md) for detailed guidelines on:
+- Setting up the development environment
+- Running tests and linting
+- Submitting pull requests
+- Code style and conventions
+
+## 📄 License & Disclaimer
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+**Important Disclaimers:**
+- This is an **educational project** created through reverse engineering
+- It is **not officially supported** by GitHub or Microsoft
+- Use may **violate GitHub's Terms of Service**
+- **Not recommended for production use**
+- Users assume all responsibility for compliance with applicable terms and policies
+
+**Prerequisites:**
+- GitHub account with active Copilot subscription (Individual or Business)
+- Understanding that this proxy intercepts and modifies API communications
+
+Use responsibly and at your own risk.
