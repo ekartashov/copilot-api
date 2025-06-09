@@ -1,4 +1,5 @@
 import { test, expect, describe } from "bun:test"
+
 import { sleep } from "../../src/lib/sleep"
 
 describe("sleep", () => {
@@ -6,7 +7,7 @@ describe("sleep", () => {
     const start = Date.now()
     await sleep(100) // 100ms
     const end = Date.now()
-    
+
     // Allow some tolerance for timing (±20ms)
     expect(end - start).toBeGreaterThanOrEqual(90)
     expect(end - start).toBeLessThan(150)
@@ -16,7 +17,7 @@ describe("sleep", () => {
     const start = Date.now()
     await sleep(0)
     const end = Date.now()
-    
+
     // Should be very fast, within 10ms
     expect(end - start).toBeLessThan(10)
   })
@@ -25,7 +26,7 @@ describe("sleep", () => {
     const start = Date.now()
     await sleep(-100)
     const end = Date.now()
-    
+
     // Should resolve immediately
     expect(end - start).toBeLessThan(10)
   })

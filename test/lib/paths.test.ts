@@ -9,12 +9,12 @@ const mockFS = {
   writeFile: mock(() => Promise.resolve()),
   chmod: mock(() => Promise.resolve()),
   constants: {
-    W_OK: 2
-  }
+    W_OK: 2,
+  },
 }
 
 mock.module("node:fs/promises", () => ({
-  default: mockFS
+  default: mockFS,
 }))
 
 // Import after mocking
@@ -22,7 +22,12 @@ import { PATHS, ensurePaths } from "../../src/lib/paths"
 
 describe("PATHS", () => {
   test("should define correct paths", () => {
-    const expectedAppDir = path.join(os.homedir(), ".local", "share", "copilot-api")
+    const expectedAppDir = path.join(
+      os.homedir(),
+      ".local",
+      "share",
+      "copilot-api",
+    )
     const expectedTokenPath = path.join(expectedAppDir, "github_token")
 
     expect(PATHS.APP_DIR).toBe(expectedAppDir)
@@ -53,7 +58,9 @@ describe("ensurePaths", () => {
 
     await ensurePaths()
 
-    expect(mockFS.mkdir).toHaveBeenCalledWith(PATHS.APP_DIR, { recursive: true })
+    expect(mockFS.mkdir).toHaveBeenCalledWith(PATHS.APP_DIR, {
+      recursive: true,
+    })
   })
 
   test("should ensure github token file exists when file is accessible", async () => {
@@ -61,7 +68,10 @@ describe("ensurePaths", () => {
 
     await ensurePaths()
 
-    expect(mockFS.access).toHaveBeenCalledWith(PATHS.GITHUB_TOKEN_PATH, mockFS.constants.W_OK)
+    expect(mockFS.access).toHaveBeenCalledWith(
+      PATHS.GITHUB_TOKEN_PATH,
+      mockFS.constants.W_OK,
+    )
     expect(mockFS.writeFile).not.toHaveBeenCalled()
     expect(mockFS.chmod).not.toHaveBeenCalled()
   })
@@ -71,7 +81,10 @@ describe("ensurePaths", () => {
 
     await ensurePaths()
 
-    expect(mockFS.access).toHaveBeenCalledWith(PATHS.GITHUB_TOKEN_PATH, mockFS.constants.W_OK)
+    expect(mockFS.access).toHaveBeenCalledWith(
+      PATHS.GITHUB_TOKEN_PATH,
+      mockFS.constants.W_OK,
+    )
     expect(mockFS.writeFile).toHaveBeenCalledWith(PATHS.GITHUB_TOKEN_PATH, "")
     expect(mockFS.chmod).toHaveBeenCalledWith(PATHS.GITHUB_TOKEN_PATH, 0o600)
   })

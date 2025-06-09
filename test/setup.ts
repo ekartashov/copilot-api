@@ -51,7 +51,7 @@ export const createMockRequest = (
   method: string,
   url: string,
   body?: any,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
 ) => {
   return new Request(url, {
     method,
@@ -97,7 +97,7 @@ export const mockModelsResponse = {
     },
     {
       id: "gpt-3.5-turbo",
-      object: "model", 
+      object: "model",
       created: 1686935002,
       owned_by: "github",
     },

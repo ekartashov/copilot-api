@@ -42,7 +42,7 @@ export async function setupGitHubToken(
 ): Promise<void> {
   try {
     let githubToken: string | null = null
-    
+
     try {
       githubToken = await readGithubToken()
     } catch {

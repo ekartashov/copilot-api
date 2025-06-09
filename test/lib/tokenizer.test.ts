@@ -1,10 +1,11 @@
 import { test, expect, describe, mock, beforeEach } from "bun:test"
+
 import type { Message } from "../../src/services/copilot/create-chat-completions"
 
 // Mock gpt-tokenizer
 const mockCountTokens = mock(() => 0)
 mock.module("gpt-tokenizer/model/gpt-4o", () => ({
-  countTokens: mockCountTokens
+  countTokens: mockCountTokens,
 }))
 
 // Import after mocking
@@ -19,12 +20,12 @@ describe("getTokenCount", () => {
     const messages: Array<Message> = [
       { role: "user", content: "Hello, how are you?" },
       { role: "assistant", content: "I'm doing well, thank you!" },
-      { role: "user", content: "What's the weather like?" }
+      { role: "user", content: "What's the weather like?" },
     ]
 
     mockCountTokens
       .mockReturnValueOnce(10) // input tokens
-      .mockReturnValueOnce(8)  // output tokens
+      .mockReturnValueOnce(8) // output tokens
 
     const result = getTokenCount(messages)
 
@@ -37,7 +38,7 @@ describe("getTokenCount", () => {
     const messages: Array<Message> = [
       { role: "user", content: "User message" },
       { role: "system", content: "System message" },
-      { role: "assistant", content: "Assistant message" }
+      { role: "assistant", content: "Assistant message" },
     ]
 
     mockCountTokens
@@ -72,7 +73,7 @@ describe("getTokenCount", () => {
   test("should handle messages with only assistant responses", () => {
     const messages: Array<Message> = [
       { role: "assistant", content: "First response" },
-      { role: "assistant", content: "Second response" }
+      { role: "assistant", content: "Second response" },
     ]
 
     mockCountTokens
@@ -89,7 +90,7 @@ describe("getTokenCount", () => {
   test("should handle messages with only user/system messages", () => {
     const messages: Array<Message> = [
       { role: "user", content: "User message" },
-      { role: "system", content: "System message" }
+      { role: "system", content: "System message" },
     ]
 
     mockCountTokens
@@ -104,19 +105,15 @@ describe("getTokenCount", () => {
   })
 
   test("should return correct structure", () => {
-    const messages: Array<Message> = [
-      { role: "user", content: "Test message" }
-    ]
+    const messages: Array<Message> = [{ role: "user", content: "Test message" }]
 
-    mockCountTokens
-      .mockReturnValueOnce(15)
-      .mockReturnValueOnce(0)
+    mockCountTokens.mockReturnValueOnce(15).mockReturnValueOnce(0)
 
     const result = getTokenCount(messages)
 
     expect(result).toEqual({
       input: 15,
-      output: 0
+      output: 0,
     })
     expect(typeof result.input).toBe("number")
     expect(typeof result.output).toBe("number")
@@ -126,18 +123,16 @@ describe("getTokenCount", () => {
     const messages: Array<Message> = [
       { role: "user", content: "User content" },
       { role: "assistant", content: "Assistant content" },
-      { role: "system", content: "System content" }
+      { role: "system", content: "System content" },
     ]
 
-    mockCountTokens
-      .mockReturnValueOnce(12)
-      .mockReturnValueOnce(8)
+    mockCountTokens.mockReturnValueOnce(12).mockReturnValueOnce(8)
 
     getTokenCount(messages)
 
     // Verify that countTokens was called twice (once for input, once for output)
     expect(mockCountTokens).toHaveBeenCalledTimes(2)
-    
+
     // The function should filter correctly:
     // Input: user and system messages (excluding assistant)
     // Output: only assistant messages

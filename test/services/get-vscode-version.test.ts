@@ -1,4 +1,5 @@
 import { test, expect, describe, beforeEach, afterEach, spyOn } from "bun:test"
+
 import { getVSCodeVersion } from "../../src/services/get-vscode-version"
 
 describe("getVSCodeVersion (isolated from module mocks)", () => {
@@ -25,15 +26,17 @@ url="https://code.visualstudio.com/"
 license=('custom: commercial')
 `
 
-    fetchSpy.mockResolvedValueOnce(new Response(mockPkgbuild, {
-      status: 200
-    }))
+    fetchSpy.mockResolvedValueOnce(
+      new Response(mockPkgbuild, {
+        status: 200,
+      }),
+    )
 
     const result = await getVSCodeVersion()
 
     expect(fetchSpy).toHaveBeenCalledTimes(1)
     expect(fetchSpy).toHaveBeenCalledWith(
-      "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=visual-studio-code-bin"
+      "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=visual-studio-code-bin",
     )
     expect(result).toBe("1.95.2")
   })
@@ -48,9 +51,11 @@ pkgrel=1
 pkgdesc="Visual Studio Code (binary)"
 `
 
-    fetchSpy.mockResolvedValueOnce(new Response(mockPkgbuild, {
-      status: 200
-    }))
+    fetchSpy.mockResolvedValueOnce(
+      new Response(mockPkgbuild, {
+        status: 200,
+      }),
+    )
 
     const result = await getVSCodeVersion()
 
@@ -62,9 +67,11 @@ pkgdesc="Visual Studio Code (binary)"
 pkgver=invalid-version-format
 `
 
-    fetchSpy.mockResolvedValueOnce(new Response(mockPkgbuild, {
-      status: 200
-    }))
+    fetchSpy.mockResolvedValueOnce(
+      new Response(mockPkgbuild, {
+        status: 200,
+      }),
+    )
 
     const result = await getVSCodeVersion()
 
@@ -79,10 +86,12 @@ pkgver=invalid-version-format
 
   test("should handle non-ok response by calling text() anyway", async () => {
     // The current implementation doesn't check response.ok, it just calls .text()
-    fetchSpy.mockResolvedValueOnce(new Response("error page content", {
-      status: 404,
-      statusText: "Not Found"
-    }))
+    fetchSpy.mockResolvedValueOnce(
+      new Response("error page content", {
+        status: 404,
+        statusText: "Not Found",
+      }),
+    )
 
     const result = await getVSCodeVersion()
 
@@ -96,9 +105,11 @@ pkgver=invalid-version-format
 pkgver=1.95.3.beta.1
 `
 
-    fetchSpy.mockResolvedValueOnce(new Response(mockPkgbuild, {
-      status: 200
-    }))
+    fetchSpy.mockResolvedValueOnce(
+      new Response(mockPkgbuild, {
+        status: 200,
+      }),
+    )
 
     const result = await getVSCodeVersion()
 
@@ -111,9 +122,11 @@ pkgver=1.95.3.beta.1
 pkgver=1.95.3
 `
 
-    fetchSpy.mockResolvedValueOnce(new Response(mockPkgbuild, {
-      status: 200
-    }))
+    fetchSpy.mockResolvedValueOnce(
+      new Response(mockPkgbuild, {
+        status: 200,
+      }),
+    )
 
     const result = await getVSCodeVersion()
 
@@ -127,9 +140,11 @@ pkgver=1.95.1
 pkgver=1.95.2
 `
 
-    fetchSpy.mockResolvedValueOnce(new Response(mockPkgbuild, {
-      status: 200
-    }))
+    fetchSpy.mockResolvedValueOnce(
+      new Response(mockPkgbuild, {
+        status: 200,
+      }),
+    )
 
     const result = await getVSCodeVersion()
 
@@ -139,7 +154,7 @@ pkgver=1.95.2
   test("should handle response.text() errors", async () => {
     const mockResponse = new Response("test")
     mockResponse.text = () => Promise.reject(new Error("Text parsing error"))
-    
+
     fetchSpy.mockResolvedValueOnce(mockResponse)
 
     await expect(getVSCodeVersion()).rejects.toThrow("Text parsing error")

@@ -1,4 +1,5 @@
 import { test, expect, describe, mock, beforeEach } from "bun:test"
+
 import type { ModelsResponse } from "../../src/services/copilot/get-models"
 
 // Create helper to make mock models
@@ -16,34 +17,37 @@ const createMockModel = (id: string) => ({
     object: "model_capabilities",
     supports: {},
     tokenizer: "test-tokenizer",
-    type: "chat"
-  }
+    type: "chat",
+  },
 })
 
 // Mock getModels service
-const mockGetModels = mock((): Promise<ModelsResponse> => Promise.resolve({
-  object: "list",
-  data: []
-}))
+const mockGetModels = mock(
+  (): Promise<ModelsResponse> =>
+    Promise.resolve({
+      object: "list",
+      data: [],
+    }),
+)
 
 mock.module("../../src/services/copilot/get-models", () => ({
-  getModels: mockGetModels
+  getModels: mockGetModels,
 }))
 
 // Mock consola
 const mockConsola = {
-  info: mock(() => {})
+  info: mock(() => {}),
 }
 mock.module("consola", () => ({
-  default: mockConsola
+  default: mockConsola,
 }))
 
 // Mock state
 const mockState: any = {
-  models: undefined
+  models: undefined,
 }
 mock.module("../../src/lib/state", () => ({
-  state: mockState
+  state: mockState,
 }))
 
 // Import after mocking
@@ -59,10 +63,7 @@ describe("cacheModels", () => {
   test("should fetch models and cache them in state", async () => {
     const mockModelsResponse: ModelsResponse = {
       object: "list",
-      data: [
-        createMockModel("gpt-4"),
-        createMockModel("gpt-3.5-turbo")
-      ]
+      data: [createMockModel("gpt-4"), createMockModel("gpt-3.5-turbo")],
     }
 
     mockGetModels.mockResolvedValueOnce(mockModelsResponse)
@@ -79,8 +80,8 @@ describe("cacheModels", () => {
       data: [
         createMockModel("gpt-4"),
         createMockModel("claude-3"),
-        createMockModel("gpt-3.5-turbo")
-      ]
+        createMockModel("gpt-3.5-turbo"),
+      ],
     }
 
     mockGetModels.mockResolvedValueOnce(mockModelsResponse)
@@ -89,14 +90,14 @@ describe("cacheModels", () => {
 
     expect(mockConsola.info).toHaveBeenCalledTimes(1)
     expect(mockConsola.info).toHaveBeenCalledWith(
-      "Available models: \n- gpt-4\n- claude-3\n- gpt-3.5-turbo"
+      "Available models: \n- gpt-4\n- claude-3\n- gpt-3.5-turbo",
     )
   })
 
   test("should handle empty models list", async () => {
     const mockModelsResponse: ModelsResponse = {
       object: "list",
-      data: []
+      data: [],
     }
 
     mockGetModels.mockResolvedValueOnce(mockModelsResponse)
@@ -110,7 +111,7 @@ describe("cacheModels", () => {
   test("should handle single model", async () => {
     const mockModelsResponse: ModelsResponse = {
       object: "list",
-      data: [createMockModel("gpt-4")]
+      data: [createMockModel("gpt-4")],
     }
 
     mockGetModels.mockResolvedValueOnce(mockModelsResponse)
@@ -126,7 +127,7 @@ describe("cacheModels", () => {
     mockGetModels.mockRejectedValueOnce(mockError)
 
     await expect(cacheModels()).rejects.toThrow("Failed to fetch models")
-    
+
     expect(mockState.models).toBeUndefined()
     expect(mockConsola.info).not.toHaveBeenCalled()
   })
@@ -135,15 +136,12 @@ describe("cacheModels", () => {
     // Set initial state
     mockState.models = {
       object: "list",
-      data: [createMockModel("old-model")]
+      data: [createMockModel("old-model")],
     }
 
     const newModelsResponse: ModelsResponse = {
       object: "list",
-      data: [
-        createMockModel("new-model-1"),
-        createMockModel("new-model-2")
-      ]
+      data: [createMockModel("new-model-1"), createMockModel("new-model-2")],
     }
 
     mockGetModels.mockResolvedValueOnce(newModelsResponse)
@@ -157,7 +155,7 @@ describe("cacheModels", () => {
   test("should return void", async () => {
     const mockModelsResponse: ModelsResponse = {
       object: "list",
-      data: [createMockModel("test-model")]
+      data: [createMockModel("test-model")],
     }
 
     mockGetModels.mockResolvedValueOnce(mockModelsResponse)

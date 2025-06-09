@@ -1,4 +1,5 @@
 import { test, expect, describe } from "bun:test"
+
 import { isNullish } from "../../src/lib/is-nullish"
 
 describe("isNullish", () => {
@@ -41,22 +42,23 @@ describe("isNullish", () => {
     expect(isNullish(-1)).toBe(false)
     expect(isNullish(3.14)).toBe(false)
     expect(isNullish(Infinity)).toBe(false)
-    expect(isNullish(NaN)).toBe(false)
+    expect(isNullish(Number.NaN)).toBe(false)
   })
 
   test("should work with complex objects", () => {
     const obj = { key: "value" }
     const arr = [1, 2, 3]
     const func = () => {}
-    
+
     expect(isNullish(obj)).toBe(false)
     expect(isNullish(arr)).toBe(false)
     expect(isNullish(func)).toBe(false)
   })
 
   test("should work as type guard", () => {
-    const value: string | null | undefined = Math.random() > 0.5 ? "hello" : null
-    
+    const value: string | null | undefined =
+      Math.random() > 0.5 ? "hello" : null
+
     if (isNullish(value)) {
       // TypeScript should know value is null | undefined here
       expect(value === null || value === undefined).toBe(true)

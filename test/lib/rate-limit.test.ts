@@ -1,20 +1,22 @@
 import { test, expect, describe, mock, beforeEach } from "bun:test"
+
 import type { State } from "../../src/lib/state"
+
 import { HTTPError } from "../../src/lib/http-error"
 
 // Mock sleep function
 const mockSleep = mock(() => Promise.resolve())
 mock.module("../../src/lib/sleep", () => ({
-  sleep: mockSleep
+  sleep: mockSleep,
 }))
 
 // Mock consola
 const mockConsola = {
   warn: mock(() => {}),
-  info: mock(() => {})
+  info: mock(() => {}),
 }
 mock.module("consola", () => ({
-  default: mockConsola
+  default: mockConsola,
 }))
 
 // Import after mocking
@@ -32,7 +34,7 @@ describe("checkRateLimit", () => {
       accountType: "individual",
       manualApprove: false,
       rateLimitWait: false,
-      visionEnabled: false
+      visionEnabled: false,
     }
 
     await checkRateLimit(state)
@@ -47,7 +49,7 @@ describe("checkRateLimit", () => {
       manualApprove: false,
       rateLimitWait: false,
       visionEnabled: false,
-      rateLimitSeconds: 5
+      rateLimitSeconds: 5,
     }
 
     const beforeTime = Date.now()
@@ -65,7 +67,7 @@ describe("checkRateLimit", () => {
       rateLimitWait: false,
       visionEnabled: false,
       rateLimitSeconds: 1,
-      lastRequestTimestamp: Date.now() - 2000 // 2 seconds ago
+      lastRequestTimestamp: Date.now() - 2000, // 2 seconds ago
     }
 
     const beforeTime = Date.now()
@@ -85,13 +87,15 @@ describe("checkRateLimit", () => {
       rateLimitWait: false,
       visionEnabled: false,
       rateLimitSeconds: 5,
-      lastRequestTimestamp: Date.now() - 1000 // 1 second ago
+      lastRequestTimestamp: Date.now() - 1000, // 1 second ago
     }
 
     await expect(checkRateLimit(state)).rejects.toThrow(HTTPError)
 
     expect(mockConsola.warn).toHaveBeenCalledWith(
-      expect.stringMatching(/Rate limit exceeded\. Need to wait \d+ more seconds\./)
+      expect.stringMatching(
+        /Rate limit exceeded\. Need to wait \d+ more seconds\./,
+      ),
     )
     expect(mockSleep).not.toHaveBeenCalled()
 
@@ -111,17 +115,19 @@ describe("checkRateLimit", () => {
       rateLimitWait: true,
       visionEnabled: false,
       rateLimitSeconds: 5,
-      lastRequestTimestamp: Date.now() - 1000 // 1 second ago
+      lastRequestTimestamp: Date.now() - 1000, // 1 second ago
     }
 
     await checkRateLimit(state)
 
     expect(mockConsola.warn).toHaveBeenCalledWith(
-      expect.stringMatching(/Rate limit reached\. Waiting \d+ seconds before proceeding\.\.\./)
+      expect.stringMatching(
+        /Rate limit reached\. Waiting \d+ seconds before proceeding\.\.\./,
+      ),
     )
     expect(mockSleep).toHaveBeenCalledWith(expect.any(Number))
     expect(mockConsola.info).toHaveBeenCalledWith(
-      "Rate limit wait completed, proceeding with request"
+      "Rate limit wait completed, proceeding with request",
     )
   })
 
@@ -132,7 +138,7 @@ describe("checkRateLimit", () => {
       rateLimitWait: true,
       visionEnabled: false,
       rateLimitSeconds: 5,
-      lastRequestTimestamp: Date.now() - 2000 // 2 seconds ago
+      lastRequestTimestamp: Date.now() - 2000, // 2 seconds ago
     }
 
     await checkRateLimit(state)
@@ -149,7 +155,7 @@ describe("checkRateLimit", () => {
       rateLimitWait: true,
       visionEnabled: false,
       rateLimitSeconds: 5,
-      lastRequestTimestamp: now - 100 // 0.1 seconds ago
+      lastRequestTimestamp: now - 100, // 0.1 seconds ago
     }
 
     await checkRateLimit(state)
@@ -165,7 +171,7 @@ describe("checkRateLimit", () => {
       rateLimitWait: true,
       visionEnabled: false,
       rateLimitSeconds: 2,
-      lastRequestTimestamp: Date.now() - 500 // 0.5 seconds ago
+      lastRequestTimestamp: Date.now() - 500, // 0.5 seconds ago
     }
 
     const beforeTime = Date.now()
@@ -183,7 +189,7 @@ describe("checkRateLimit", () => {
       rateLimitWait: false,
       visionEnabled: false,
       rateLimitSeconds: 5,
-      lastRequestTimestamp: Date.now() - 1000 // 1 second ago
+      lastRequestTimestamp: Date.now() - 1000, // 1 second ago
     }
 
     await expect(checkRateLimit(state)).rejects.toThrow(HTTPError)

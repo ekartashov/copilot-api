@@ -1,4 +1,5 @@
 import { test, expect, describe, beforeEach } from "bun:test"
+
 import { state } from "../../src/lib/state"
 
 describe("State Management", () => {
@@ -62,7 +63,7 @@ describe("State Management", () => {
   test("should handle vision enabled flag", () => {
     state.visionEnabled = true
     expect(state.visionEnabled).toBe(true)
-    
+
     state.visionEnabled = false
     expect(state.visionEnabled).toBe(false)
   })

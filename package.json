@@ -36,10 +36,7 @@
     "test:watch": "bun test --watch"
   },
   "simple-git-hooks": {
-    "pre-commit": "echo 'Pre-commit hook temporarily disabled for debugging'"
-  },
-  "lint-staged": {
-    "*.{js,ts,mjs,cjs}": "bunx eslint --fix"
+    "pre-commit": "git diff --cached --name-only --diff-filter=ACM | grep -E '\\.(js|ts|mjs|cjs)$' | xargs -r bunx eslint --fix && git add -u"
   },
   "dependencies": {
     "citty": "^0.1.6",

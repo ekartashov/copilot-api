@@ -1,14 +1,15 @@
 import { test, expect, describe, mock } from "bun:test"
+
 import { HTTPError } from "../../src/lib/http-error"
 
 // Mock consola
 const mockConsola = {
   prompt: mock(() => Promise.resolve(true)),
-  info: mock(() => {})
+  info: mock(() => {}),
 }
 
 mock.module("consola", () => ({
-  default: mockConsola
+  default: mockConsola,
 }))
 
 // Import after mocking
@@ -19,10 +20,10 @@ describe("awaitApproval", () => {
     mockConsola.prompt.mockResolvedValueOnce(true)
 
     await expect(awaitApproval()).resolves.toBeUndefined()
-    
+
     expect(mockConsola.prompt).toHaveBeenCalledWith(
       "Accept incoming request?",
-      { type: "confirm" }
+      { type: "confirm" },
     )
   })
 
@@ -30,7 +31,7 @@ describe("awaitApproval", () => {
     mockConsola.prompt.mockResolvedValueOnce(false)
 
     await expect(awaitApproval()).rejects.toThrow(HTTPError)
-    
+
     try {
       await awaitApproval()
     } catch (error) {
@@ -54,7 +55,7 @@ describe("awaitApproval", () => {
 
     expect(mockConsola.prompt).toHaveBeenCalledWith(
       "Accept incoming request?",
-      { type: "confirm" }
+      { type: "confirm" },
     )
   })
 })
