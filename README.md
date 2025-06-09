@@ -195,13 +195,13 @@ All endpoints also work with `/v1/` prefix for broader tool compatibility:
 
 ```mermaid
 graph TD
-  A[Client (e.g. AI Assistant)] -->|OpenAI-style request| B(Copilot API Proxy)
-  B --> C[Request Rewriter]
-  C --> D[GitHub Copilot Backend]
-  D --> E[Copilot Response]
-  E --> F[Response Translator]
+  A["Client (e.g. AI Assistant)"] -->|OpenAI-style request| B("Copilot API Proxy")
+  B --> C["Request Rewriter"]
+  C --> D["GitHub Copilot Backend"]
+  D --> E["Copilot Response"]
+  E --> F["Response Translator"]
   F --> A
-  B -.-> G[Auth Layer (GitHub OAuth)]
+  B -.-> G["Auth Layer (GitHub OAuth)"]
   G -->|Token| B
   style B fill:#f9f,stroke:#333,stroke-width:2px
   style D fill:#bbf,stroke:#333,stroke-width:1px
