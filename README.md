@@ -203,9 +203,9 @@ graph TD
   F --> A
   B -.-> G["Auth Layer (GitHub OAuth)"]
   G -->|Token| B
-  style B fill:#f9f,stroke:#333,stroke-width:2px
-  style D fill:#bbf,stroke:#333,stroke-width:1px
-  style G fill:#ffc,stroke:#333,stroke-width:1px
+  style B fill:#b37700,stroke:#000,stroke-width:2px
+  style D fill:#002642,stroke:#000,stroke-width:1px
+  style G fill:#b91c1c,stroke:#000,stroke-width:1px
 ```
 
 The proxy server:
