@@ -134,7 +134,7 @@ When reporting bugs or requesting features:
 ## 📚 Resources
 
 - **Project NOTICE**: [`NOTICE`](NOTICE) - Required reading for all contributors
-- **MIT License**: [`LICENSE`](LICENSE) - Project license terms
+- **MIT License**: [`LICENSE.md`](LICENSE.md) - Project license terms
 - **GitHub ToS**: [GitHub Terms of Service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service)
 - **Reverse Engineering Law**: Research applicable laws in your jurisdiction
 
