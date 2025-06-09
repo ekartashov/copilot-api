@@ -29,7 +29,7 @@ export const copilotHeaders = (state: State, vision: boolean = false) => {
     "x-vscode-user-agent-library-version": "electron-fetch",
   }
 
-  if (vision) headers["copilot-vision-request"] = "true"
+  if (vision || state.visionEnabled) headers["copilot-vision-request"] = "true"
 
   return headers
 }

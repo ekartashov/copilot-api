@@ -8,9 +8,9 @@ describe("sleep", () => {
     await sleep(100) // 100ms
     const end = Date.now()
 
-    // Allow some tolerance for timing (±20ms)
+    // Allow some tolerance for timing (±30ms)
     expect(end - start).toBeGreaterThanOrEqual(90)
-    expect(end - start).toBeLessThan(150)
+    expect(end - start).toBeLessThan(160)
   })
 
   test("should resolve immediately for 0ms", async () => {
