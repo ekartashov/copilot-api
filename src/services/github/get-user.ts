@@ -1,11 +1,21 @@
+import type { State } from "~/lib/state"
+
 import { GITHUB_API_BASE_URL, standardHeaders } from "~/lib/api-config"
 import { HTTPError } from "~/lib/http-error"
 import { state } from "~/lib/state"
 
-export async function getGitHubUser() {
-  const response = await globalThis.fetch(`${GITHUB_API_BASE_URL}/user`, {
+export interface GetGitHubUserDependencies {
+  state?: State
+  fetch?: typeof globalThis.fetch
+}
+
+export async function getGitHubUser(deps: GetGitHubUserDependencies = {}) {
+  const currentState = deps.state ?? state
+  const fetchFn = deps.fetch ?? globalThis.fetch
+
+  const response = await fetchFn(`${GITHUB_API_BASE_URL}/user`, {
     headers: {
-      authorization: `token ${state.githubToken}`,
+      authorization: `token ${currentState.githubToken}`,
       ...standardHeaders(),
     },
   })

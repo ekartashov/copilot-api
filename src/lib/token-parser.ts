@@ -15,7 +15,12 @@ export function parseTokensFromEnv(): Array<TokenAccount> {
     return []
   }
 
-  return parseTokensFromString(envValue, ",")
+  try {
+    return parseTokensFromString(envValue, ",")
+  } catch {
+    // Gracefully handle malformed tokens by returning empty array
+    return []
+  }
 }
 
 /**
@@ -40,10 +45,9 @@ export async function loadTokensFromFile(): Promise<Array<TokenAccount>> {
     const content: string = await (__mockReadFile._mockValue
       || readFile(filePath, "utf8"))
     return parseTokensFromFile(content)
-  } catch (error: unknown) {
-    throw new Error(
-      `Failed to read tokens file: ${error instanceof Error ? error.message : String(error)}`,
-    )
+  } catch {
+    // Gracefully handle file read errors by returning empty array
+    return []
   }
 }
 

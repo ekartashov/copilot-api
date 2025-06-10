@@ -4,6 +4,15 @@ import type { State } from "./state"
 
 import { getAllTokens, type TokenAccount } from "./token-parser"
 
+export interface AccountManagerDependencies {
+  getAllTokens?: () => Promise<Array<TokenAccount>>
+  logger?: {
+    info: (message: string) => void
+    warn: (message: string) => void
+    error: (message: string) => void
+  }
+}
+
 export class AccountManager {
   private accounts: Array<TokenAccount> = []
   private currentIndex: number = 0
@@ -13,12 +22,24 @@ export class AccountManager {
     { requests: number; rateLimitHits: number }
   > = {}
 
+  private getAllTokens: () => Promise<Array<TokenAccount>>
+  private logger: {
+    info: (message: string) => void
+    warn: (message: string) => void
+    error: (message: string) => void
+  }
+
+  constructor(deps: AccountManagerDependencies = {}) {
+    this.getAllTokens = deps.getAllTokens ?? getAllTokens
+    this.logger = deps.logger ?? consola
+  }
+
   /**
    * Initialize the account manager with available tokens
    */
   async initialize(): Promise<void> {
     try {
-      this.accounts = await getAllTokens()
+      this.accounts = await this.getAllTokens()
 
       if (this.accounts.length === 0) {
         throw new Error("No GitHub tokens available")
@@ -31,7 +52,7 @@ export class AccountManager {
 
       // Log initialization
       const labels = this.accounts.map((account) => account.label).join(", ")
-      consola.info(
+      this.logger.info(
         `Initialized account rotation with ${this.accounts.length} accounts: ${labels}`,
       )
     } catch (error: unknown) {
@@ -53,7 +74,7 @@ export class AccountManager {
 
     // Handle single account case
     if (this.accounts.length === 1) {
-      consola.warn(
+      this.logger.warn(
         `Rate limit hit for account '${currentAccount.label}', but no other accounts available`,
       )
       return false
@@ -69,7 +90,7 @@ export class AccountManager {
       const nextAccount = this.getCurrentAccount()
 
       if (!this.rateLimitedAccounts.has(nextAccount.label)) {
-        consola.info(
+        this.logger.info(
           `Rate limit hit for account '${currentAccount.label}', rotating to account '${nextAccount.label}'`,
         )
         return true
@@ -78,7 +99,7 @@ export class AccountManager {
 
     // All accounts are rate limited
     const _allLabels = this.accounts.map((a) => a.label)
-    consola.error(
+    this.logger.error(
       "All accounts are rate limited. Consider reducing request frequency or adding more tokens.",
     )
     return false
@@ -136,7 +157,7 @@ export class AccountManager {
     )
 
     if (allRateLimited && this.accounts.length > 1) {
-      consola.error(
+      this.logger.error(
         "All accounts are rate limited. Consider reducing request frequency or adding more tokens.",
       )
     }

@@ -1,22 +1,25 @@
 import { test, expect, describe, beforeEach, afterEach, spyOn } from "bun:test"
 
 import { HTTPError } from "../../../src/lib/http-error"
-
-// Mock the state module
-const mockState = {
-  githubToken: "test-github-token",
-}
-
-import { mock } from "bun:test"
-mock.module("~/lib/state", () => ({
-  state: mockState,
-}))
+import { getCopilotToken } from "../../../src/services/github/get-copilot-token"
 
 describe("getCopilotToken", () => {
   let fetchSpy: any
+  let mockState: any
+  let mockAccountManager: any
 
   beforeEach(() => {
-    mockState.githubToken = "test-github-token"
+    mockState = {
+      githubToken: "test-github-token",
+      accountType: "individual",
+      vsCodeVersion: "1.85.0",
+    }
+
+    mockAccountManager = {
+      rotateOnRateLimit: () => {},
+      updateState: () => {},
+    }
+
     fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(new Response())
   })
 
@@ -38,11 +41,11 @@ describe("getCopilotToken", () => {
       }),
     )
 
-    // Import dynamically to avoid module mock conflicts
-    const { getCopilotToken } = await import(
-      "../../../src/services/github/get-copilot-token"
-    )
-    const result = await getCopilotToken()
+    const result = await getCopilotToken({
+      state: mockState,
+      accountManager: mockAccountManager,
+      fetch: fetchSpy,
+    })
 
     expect(fetchSpy).toHaveBeenCalledTimes(1)
     expect(fetchSpy).toHaveBeenCalledWith(
@@ -66,10 +69,13 @@ describe("getCopilotToken", () => {
 
     fetchSpy.mockResolvedValueOnce(errorResponse)
 
-    const { getCopilotToken } = await import(
-      "../../../src/services/github/get-copilot-token"
-    )
-    await expect(getCopilotToken()).rejects.toThrow(HTTPError)
+    await expect(
+      getCopilotToken({
+        state: mockState,
+        accountManager: mockAccountManager,
+        fetch: fetchSpy,
+      }),
+    ).rejects.toThrow(HTTPError)
   })
 
   test("should throw HTTPError on 403 Forbidden", async () => {
@@ -80,10 +86,13 @@ describe("getCopilotToken", () => {
 
     fetchSpy.mockResolvedValueOnce(errorResponse)
 
-    const { getCopilotToken } = await import(
-      "../../../src/services/github/get-copilot-token"
-    )
-    await expect(getCopilotToken()).rejects.toThrow(HTTPError)
+    await expect(
+      getCopilotToken({
+        state: mockState,
+        accountManager: mockAccountManager,
+        fetch: fetchSpy,
+      }),
+    ).rejects.toThrow(HTTPError)
   })
 
   test("should throw HTTPError on 404 Not Found", async () => {
@@ -94,10 +103,13 @@ describe("getCopilotToken", () => {
 
     fetchSpy.mockResolvedValueOnce(errorResponse)
 
-    const { getCopilotToken } = await import(
-      "../../../src/services/github/get-copilot-token"
-    )
-    await expect(getCopilotToken()).rejects.toThrow(HTTPError)
+    await expect(
+      getCopilotToken({
+        state: mockState,
+        accountManager: mockAccountManager,
+        fetch: fetchSpy,
+      }),
+    ).rejects.toThrow(HTTPError)
   })
 
   test("should throw HTTPError on 500 Internal Server Error", async () => {
@@ -108,10 +120,13 @@ describe("getCopilotToken", () => {
 
     fetchSpy.mockResolvedValueOnce(errorResponse)
 
-    const { getCopilotToken } = await import(
-      "../../../src/services/github/get-copilot-token"
-    )
-    await expect(getCopilotToken()).rejects.toThrow(HTTPError)
+    await expect(
+      getCopilotToken({
+        state: mockState,
+        accountManager: mockAccountManager,
+        fetch: fetchSpy,
+      }),
+    ).rejects.toThrow(HTTPError)
   })
 
   test("should use correct API endpoint", async () => {
@@ -126,10 +141,11 @@ describe("getCopilotToken", () => {
       ),
     )
 
-    const { getCopilotToken } = await import(
-      "../../../src/services/github/get-copilot-token"
-    )
-    await getCopilotToken()
+    await getCopilotToken({
+      state: mockState,
+      accountManager: mockAccountManager,
+      fetch: fetchSpy,
+    })
 
     expect(fetchSpy).toHaveBeenCalledWith(
       "https://api.github.com/copilot_internal/v2/token",
@@ -138,7 +154,10 @@ describe("getCopilotToken", () => {
   })
 
   test("should include GitHub token in authorization header", async () => {
-    mockState.githubToken = "custom-github-token-456"
+    const customMockState = {
+      ...mockState,
+      githubToken: "custom-github-token-456",
+    }
 
     fetchSpy.mockResolvedValueOnce(
       new Response(
@@ -151,10 +170,11 @@ describe("getCopilotToken", () => {
       ),
     )
 
-    const { getCopilotToken } = await import(
-      "../../../src/services/github/get-copilot-token"
-    )
-    await getCopilotToken()
+    await getCopilotToken({
+      state: customMockState,
+      accountManager: mockAccountManager,
+      fetch: fetchSpy,
+    })
 
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.any(String),
@@ -169,9 +189,12 @@ describe("getCopilotToken", () => {
   test("should handle network errors", async () => {
     fetchSpy.mockRejectedValueOnce(new Error("Network error"))
 
-    const { getCopilotToken } = await import(
-      "../../../src/services/github/get-copilot-token"
-    )
-    await expect(getCopilotToken()).rejects.toThrow("Network error")
+    await expect(
+      getCopilotToken({
+        state: mockState,
+        accountManager: mockAccountManager,
+        fetch: fetchSpy,
+      }),
+    ).rejects.toThrow("Network error")
   })
 })

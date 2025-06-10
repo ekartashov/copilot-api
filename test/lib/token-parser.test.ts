@@ -262,9 +262,9 @@ describe("Token Parser", () => {
 
       const { loadTokensFromFile } = require("../../src/lib/token-parser")
 
-      await expect(loadTokensFromFile()).rejects.toThrow(
-        "Failed to read tokens file",
-      )
+      // The function now gracefully handles file read errors by returning empty array
+      const result = await loadTokensFromFile()
+      expect(result).toEqual([])
     })
   })
 

@@ -1,6 +1,9 @@
-import { test, expect, describe, beforeEach, afterAll, mock } from "bun:test"
+import { test, expect, describe, beforeEach, mock } from "bun:test"
 
 import type { State } from "../../src/lib/state"
+import type { TokenAccount } from "../../src/lib/token-parser"
+
+import { AccountManager } from "../../src/lib/account-manager"
 
 // Mock consola
 const mockConsola = {
@@ -8,33 +11,11 @@ const mockConsola = {
   warn: mock(() => {}),
   error: mock(() => {}),
 }
-mock.module("consola", () => ({
-  default: mockConsola,
-}))
 
-// Mock token parser functions for isolated testing
-const mockParseTokensFromEnv = mock<() => Array<TokenAccount>>(() => [])
-const mockLoadTokensFromFile = mock<() => Promise<Array<TokenAccount>>>(() =>
-  Promise.resolve([]),
-)
+// Mock getAllTokens function
 const mockGetAllTokens = mock<() => Promise<Array<TokenAccount>>>(() =>
   Promise.resolve([]),
 )
-
-// Create an isolated mock that only affects this test file
-const mockTokenParser = {
-  parseTokensFromEnv: mockParseTokensFromEnv,
-  loadTokensFromFile: mockLoadTokensFromFile,
-  getAllTokens: mockGetAllTokens,
-}
-
-// Only mock during this specific test file execution
-mock.module("../../src/lib/token-parser", () => mockTokenParser)
-
-interface TokenAccount {
-  label: string
-  token: string
-}
 
 describe("Account Manager", () => {
   beforeEach(() => {
@@ -42,13 +23,9 @@ describe("Account Manager", () => {
     mockConsola.info.mockClear()
     mockConsola.warn.mockClear()
     mockConsola.error.mockClear()
-    mockParseTokensFromEnv.mockClear()
-    mockLoadTokensFromFile.mockClear()
     mockGetAllTokens.mockClear()
 
     // Reset mock implementations to defaults
-    mockParseTokensFromEnv.mockReturnValue([])
-    mockLoadTokensFromFile.mockResolvedValue([])
     mockGetAllTokens.mockResolvedValue([])
   })
 
@@ -60,8 +37,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       expect(manager.getAccountCount()).toBe(2)
@@ -77,8 +56,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       expect(manager.getAccountCount()).toBe(1)
@@ -91,8 +72,10 @@ describe("Account Manager", () => {
     test("should throw error when no tokens are available", async () => {
       mockGetAllTokens.mockResolvedValue([])
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
 
       await expect(manager.initialize()).rejects.toThrow(
         "No GitHub tokens available",
@@ -107,8 +90,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       expect(mockConsola.info).toHaveBeenCalledWith(
@@ -126,8 +111,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       expect(manager.getCurrentAccount().label).toBe("alice")
@@ -148,8 +135,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       // Clear mock after initialization to test only rotation calls
@@ -179,8 +168,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       // Start with alice
@@ -205,8 +196,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       expect(manager.getCurrentAccount().label).toBe("only-account")
@@ -230,8 +223,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       // Mark all accounts as rate limited
@@ -259,8 +254,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       manager.markAccountRateLimited("alice")
@@ -277,8 +274,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       // Mark alice as rate limited
@@ -307,8 +306,10 @@ describe("Account Manager", () => {
         visionEnabled: false,
       }
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       manager.updateState(state as State)
@@ -338,8 +339,10 @@ describe("Account Manager", () => {
         vsCodeVersion: "1.85.0",
       }
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       manager.updateState(state)
@@ -365,8 +368,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       // Simulate some usage
@@ -390,8 +395,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       const initialStatus = manager.getRotationStatus()
@@ -422,8 +429,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       expect(() => manager.markAccountRateLimited("nonexistent")).not.toThrow()
@@ -434,8 +443,10 @@ describe("Account Manager", () => {
     test("should handle token validation errors during initialization", async () => {
       mockGetAllTokens.mockRejectedValue(new Error("Token validation failed"))
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
 
       await expect(manager.initialize()).rejects.toThrow(
         "Failed to initialize account manager: Token validation failed",
@@ -448,8 +459,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       // Attempt rotation with single account
@@ -469,8 +482,10 @@ describe("Account Manager", () => {
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       expect(manager.getAccountCount()).toBe(1)
@@ -486,28 +501,25 @@ describe("Account Manager", () => {
 
     test("should maintain consistent behavior when no rotation is possible", async () => {
       const accounts: Array<TokenAccount> = [
-        { label: "single", token: "single-token" },
+        { label: "single", token: "clean-test-token" },
       ]
       mockGetAllTokens.mockResolvedValue(accounts)
 
-      const { AccountManager } = require("../../src/lib/account-manager")
-      const manager = new AccountManager()
+      const manager = new AccountManager({
+        getAllTokens: mockGetAllTokens,
+        logger: mockConsola,
+      })
       await manager.initialize()
 
       const state: Partial<State> = { githubToken: undefined }
 
       // Should always use the same token
       manager.updateState(state as State)
-      expect(state.githubToken).toBe("single-token")
+      expect(state.githubToken).toBe("clean-test-token")
 
       manager.rotateOnRateLimit(429)
       manager.updateState(state as State)
-      expect(state.githubToken).toBe("single-token")
+      expect(state.githubToken).toBe("clean-test-token")
     })
-  })
-
-  afterAll(() => {
-    // Restore original modules after all tests complete
-    mock.restore()
   })
 })

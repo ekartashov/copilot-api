@@ -1,32 +1,20 @@
-import {
-  test,
-  expect,
-  describe,
-  mock,
-  beforeEach,
-  afterEach,
-  spyOn,
-} from "bun:test"
+import { test, expect, describe, beforeEach, afterEach, spyOn } from "bun:test"
 
 import { HTTPError } from "../../../src/lib/http-error"
-
-// Mock the state module
-const mockState = {
-  githubToken: "test-github-token",
-}
-
-mock.module("~/lib/state", () => ({
-  state: mockState,
-}))
-
-// Import after mocking
 import { getGitHubUser } from "../../../src/services/github/get-user"
 
 describe("getGitHubUser", () => {
   let fetchSpy: any
+  let mockState: any
 
   beforeEach(() => {
-    mockState.githubToken = "test-github-token"
+    mockState = {
+      githubToken: "test-github-token",
+      accountType: "individual",
+      manualApprove: false,
+      rateLimitWait: false,
+      visionEnabled: false,
+    }
     fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(new Response())
   })
 
@@ -48,7 +36,10 @@ describe("getGitHubUser", () => {
       }),
     )
 
-    const result = await getGitHubUser()
+    const result = await getGitHubUser({
+      state: mockState,
+      fetch: fetchSpy,
+    })
 
     expect(fetchSpy).toHaveBeenCalledTimes(1)
     expect(fetchSpy).toHaveBeenCalledWith("https://api.github.com/user", {
@@ -70,7 +61,10 @@ describe("getGitHubUser", () => {
     fetchSpy.mockResolvedValueOnce(errorResponse)
 
     try {
-      await getGitHubUser()
+      await getGitHubUser({
+        state: mockState,
+        fetch: fetchSpy,
+      })
       expect.unreachable("Should have thrown an error")
     } catch (error) {
       expect(error).toBeInstanceOf(HTTPError)
@@ -87,7 +81,12 @@ describe("getGitHubUser", () => {
 
     fetchSpy.mockResolvedValueOnce(errorResponse)
 
-    await expect(getGitHubUser()).rejects.toThrow(HTTPError)
+    await expect(
+      getGitHubUser({
+        state: mockState,
+        fetch: fetchSpy,
+      }),
+    ).rejects.toThrow(HTTPError)
   })
 
   test("should throw HTTPError on 404 Not Found", async () => {
@@ -98,7 +97,12 @@ describe("getGitHubUser", () => {
 
     fetchSpy.mockResolvedValueOnce(errorResponse)
 
-    await expect(getGitHubUser()).rejects.toThrow(HTTPError)
+    await expect(
+      getGitHubUser({
+        state: mockState,
+        fetch: fetchSpy,
+      }),
+    ).rejects.toThrow(HTTPError)
   })
 
   test("should throw HTTPError on 500 Internal Server Error", async () => {
@@ -109,7 +113,12 @@ describe("getGitHubUser", () => {
 
     fetchSpy.mockResolvedValueOnce(errorResponse)
 
-    await expect(getGitHubUser()).rejects.toThrow(HTTPError)
+    await expect(
+      getGitHubUser({
+        state: mockState,
+        fetch: fetchSpy,
+      }),
+    ).rejects.toThrow(HTTPError)
   })
 
   test("should use correct API endpoint", async () => {
@@ -119,7 +128,10 @@ describe("getGitHubUser", () => {
       }),
     )
 
-    await getGitHubUser()
+    await getGitHubUser({
+      state: mockState,
+      fetch: fetchSpy,
+    })
 
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining("https://api.github.com/user"),
@@ -128,7 +140,13 @@ describe("getGitHubUser", () => {
   })
 
   test("should include authorization header with token", async () => {
-    mockState.githubToken = "custom-token-123"
+    const customMockState = {
+      githubToken: "custom-token-123",
+      accountType: "individual",
+      manualApprove: false,
+      rateLimitWait: false,
+      visionEnabled: false,
+    }
 
     fetchSpy.mockResolvedValueOnce(
       new Response(JSON.stringify({ login: "test" }), {
@@ -136,7 +154,10 @@ describe("getGitHubUser", () => {
       }),
     )
 
-    await getGitHubUser()
+    await getGitHubUser({
+      state: customMockState,
+      fetch: fetchSpy,
+    })
 
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.any(String),
@@ -155,7 +176,10 @@ describe("getGitHubUser", () => {
       }),
     )
 
-    await getGitHubUser()
+    await getGitHubUser({
+      state: mockState,
+      fetch: fetchSpy,
+    })
 
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.any(String),
