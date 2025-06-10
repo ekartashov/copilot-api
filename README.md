@@ -9,18 +9,20 @@ This is a fork of [ericc-ch/copilot-api](https://github.com/ericc-ch/copilot-api
 
 ## 🚀 Features
 
-- **OpenAI API Compatibility**: Translates OpenAI-style requests to GitHub Copilot format
-- **GitHub OAuth Authentication**: Secure device flow authentication with GitHub
-- **Multiple Account Management**: Support for multiple GitHub accounts with automatic rotation
-- **Rate Limiting**: Built-in request throttling with configurable limits
-- **Business Account Support**: Compatible with both individual and business Copilot subscriptions
-- **Multiple Installation Methods**: Run via npx, Docker/Podman, or from source
-- **Manual Request Approval**: Optional interactive mode for request review
-- **Vision Support**: Handle image inputs in chat completions
-- **Account Rotation Logging**: Comprehensive logging of account rotation events
-- **Error Recovery**: Automatic failover between accounts on rate limits or errors
-- **Comprehensive Testing**: 80%+ test coverage goal with unit and integration tests
-- **Stream & Non-Stream Support**: Compatible with both streaming and non-streaming responses
+| Feature | Description | Benefits |
+|---------|-------------|----------|
+| **🔄 OpenAI API Compatibility** | Translates OpenAI-style requests to GitHub Copilot format | Drop-in replacement for existing OpenAI integrations |
+| **🔐 GitHub OAuth Authentication** | Secure device flow authentication with GitHub | Safe, token-based authentication without password storage |
+| **👥 Multiple Account Management** | Support for multiple GitHub accounts with automatic rotation | High availability and load distribution across accounts |
+| **⏱️ Rate Limiting** | Built-in request throttling with configurable limits | Prevents API abuse and respects GitHub's rate limits |
+| **💼 Business Account Support** | Compatible with both individual and business Copilot subscriptions | Works with enterprise GitHub Copilot plans |
+| **📦 Multiple Installation Methods** | Run via npx, Docker/Podman, or from source | Flexible deployment options for different environments |
+| **✋ Manual Request Approval** | Optional interactive mode for request review | Enhanced security and request oversight |
+| **👁️ Vision Support** | Handle image inputs in chat completions | Support for multimodal AI interactions |
+| **📊 Account Rotation Logging** | Comprehensive logging of account rotation events | Detailed monitoring and debugging capabilities |
+| **🔄 Error Recovery** | Automatic failover between accounts on rate limits or errors | Robust operation with minimal downtime |
+| **🧪 Comprehensive Testing** | 80%+ test coverage goal with unit and integration tests | High code quality and reliability assurance |
+| **🌊 Stream & Non-Stream Support** | Compatible with both streaming and non-streaming responses | Flexible response handling for different use cases |
 
 ## 📦 Installation
 
