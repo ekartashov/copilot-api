@@ -27,6 +27,7 @@ graph TB
     subgraph "Service Layer"
         GitHub[GitHub Services]
         Copilot[Copilot Services]
+        AccountMgr[Account Manager]
         Utils[Utility Libraries]
     end
 
@@ -44,7 +45,9 @@ graph TB
     Routes --> Auth
     Routes --> GitHub
     Routes --> Copilot
+    Auth --> AccountMgr
     Auth --> Utils
+    AccountMgr --> GitHub
     GitHub --> GitHubAPI
     Copilot --> CopilotAPI
 
@@ -62,6 +65,7 @@ sequenceDiagram
     participant Client
     participant Server as Hono Server
     participant Auth as Auth Layer
+    participant AccountMgr as Account Manager
     participant RateLimit as Rate Limiter
     participant Approval as Manual Approval
     participant Translator as Request Translator
@@ -88,11 +92,21 @@ sequenceDiagram
         RateLimit->>Auth: Continue
     end
 
+    Auth->>AccountMgr: Get current account
+    AccountMgr->>Auth: Return account details
     Auth->>Auth: Validate tokens
+    
     alt Tokens invalid/expired
         Auth->>Auth: Refresh tokens
         alt Refresh fails
-            Auth-->>Client: 401 Unauthorized
+            Auth->>AccountMgr: Mark account failed
+            AccountMgr->>AccountMgr: Rotate to next account
+            alt No more accounts
+                AccountMgr-->>Client: 401 All accounts failed
+            else Account available
+                AccountMgr->>Auth: New account details
+                Auth->>Auth: Retry with new account
+            end
         end
     end
 
@@ -100,9 +114,15 @@ sequenceDiagram
     Translator->>Translator: OpenAI → Copilot format
     Translator->>Copilot: Send to Copilot API
 
-    alt Copilot API error
-        Copilot-->>Response: Error response
-        Response-->>Client: Translated error
+    alt Copilot API error (rate limit/auth)
+        Copilot->>AccountMgr: Report failure
+        AccountMgr->>AccountMgr: Rotate account
+        alt Rotation successful
+            AccountMgr->>Translator: Retry with new account
+            Translator->>Copilot: Retry request
+        else No accounts available
+            AccountMgr-->>Client: 503 Service unavailable
+        end
     else Success
         Copilot->>Response: Copilot response
         Response->>Response: Copilot → OpenAI format
@@ -235,6 +255,147 @@ export const setupCopilotToken = async () => {
 - **Automatic refresh**: Proactive token renewal
 - **Error recovery**: Fallback authentication flows
 
+### Account Management System
+
+**Files**: [`src/lib/account-manager.ts`](../src/lib/account-manager.ts), [`src/lib/rotation-logging.ts`](../src/lib/rotation-logging.ts)
+
+The account management system provides automatic failover between multiple GitHub accounts to handle rate limits and authentication failures.
+
+```mermaid
+flowchart TD
+    Start[Request Received] --> GetAccount[Get Current Account]
+    GetAccount --> CheckHealth{Account Healthy?}
+    CheckHealth -->|Yes| UseAccount[Use Current Account]
+    CheckHealth -->|No| RotateAccount[Rotate to Next Account]
+    
+    UseAccount --> MakeRequest[Make API Request]
+    MakeRequest --> RequestSuccess{Request Success?}
+    RequestSuccess -->|Yes| UpdateHealth[Update Account Health]
+    RequestSuccess -->|No| CheckError{Error Type?}
+    
+    CheckError -->|Rate Limited| MarkFailed[Mark Account Failed]
+    CheckError -->|Auth Error| MarkFailed
+    CheckError -->|Other Error| ReturnError[Return Error]
+    
+    MarkFailed --> RotateAccount
+    RotateAccount --> CheckAvailable{More Accounts?}
+    CheckAvailable -->|Yes| GetAccount
+    CheckAvailable -->|No| AllFailed[All Accounts Failed]
+    
+    RotateAccount --> LogRotation[Log Rotation Event]
+    LogRotation --> GetAccount
+    
+    UpdateHealth --> Success[Request Complete]
+    AllFailed --> ErrorResponse[503 Service Unavailable]
+    ReturnError --> ErrorResponse
+```
+
+#### Account Manager Core Features
+
+```typescript
+export interface AccountManager {
+  // Account lifecycle
+  getCurrentAccount(): GitHubAccount | null
+  rotateAccount(reason: RotationReason): boolean
+  markAccountFailed(accountId: string, reason: string): void
+  markAccountHealthy(accountId: string): void
+  
+  // Account management
+  addAccount(account: GitHubAccount): void
+  removeAccount(accountId: string): void
+  getAccountHealth(accountId: string): AccountHealth
+  
+  // Monitoring
+  getRotationStats(): RotationStats
+  getAccountList(): GitHubAccount[]
+}
+```
+
+#### Rotation Logging System
+
+```typescript
+export interface RotationEvent {
+  timestamp: Date
+  fromAccount: string | null
+  toAccount: string | null
+  reason: RotationReason
+  success: boolean
+  errorMessage?: string
+  additionalContext?: Record<string, any>
+}
+
+// Comprehensive rotation tracking
+export function logRotation(event: RotationEvent): void {
+  const logEntry = {
+    timestamp: event.timestamp.toISOString(),
+    rotation: `${event.fromAccount || 'none'} → ${event.toAccount || 'none'}`,
+    reason: event.reason,
+    success: event.success,
+    ...event.additionalContext
+  }
+  
+  // File-based logging with rotation
+  appendToRotationLog(logEntry)
+}
+```
+
+#### Account Health Monitoring
+
+The system tracks account health based on:
+- **Success Rate**: Percentage of successful requests
+- **Rate Limit Status**: Current rate limit state
+- **Last Failure Time**: When the account last failed
+- **Consecutive Failures**: Number of recent failures
+- **Recovery Time**: Estimated time until account recovers
+
+```typescript
+export interface AccountHealth {
+  accountId: string
+  isHealthy: boolean
+  successRate: number
+  lastFailure?: Date
+  consecutiveFailures: number
+  rateLimitReset?: Date
+  estimatedRecovery?: Date
+}
+```
+
+#### Rotation Strategies
+
+**Round Robin**: Cycles through all healthy accounts
+```typescript
+rotateAccount(reason: 'rate_limit'): boolean {
+  const healthyAccounts = this.accounts.filter(a => a.isHealthy)
+  if (healthyAccounts.length === 0) return false
+  
+  const currentIndex = healthyAccounts.findIndex(a => a.id === this.currentAccountId)
+  const nextIndex = (currentIndex + 1) % healthyAccounts.length
+  
+  this.currentAccountId = healthyAccounts[nextIndex].id
+  this.logRotation('rate_limit', true)
+  return true
+}
+```
+
+**Failover**: Switches only on failures, maintains primary account preference
+```typescript
+rotateAccount(reason: 'auth_failure'): boolean {
+  // Mark current account as failed
+  this.markAccountFailed(this.currentAccountId, reason)
+  
+  // Find next healthy account
+  const nextAccount = this.accounts.find(a =>
+    a.id !== this.currentAccountId && a.isHealthy
+  )
+  
+  if (!nextAccount) return false
+  
+  this.currentAccountId = nextAccount.id
+  this.logRotation('auth_failure', true)
+  return true
+}
+```
+
 ### Request Translation Layer
 
 **Files**: [`src/routes/chat-completions/handler.ts`](../src/routes/chat-completions/handler.ts), [`src/services/copilot/`](../src/services/copilot/)
@@ -339,6 +500,10 @@ export interface State {
   githubToken?: string      // GitHub personal access token
   copilotToken?: string     // Copilot API token (auto-generated)
   
+  // Account Management
+  accountManager?: AccountManager  // Multi-account rotation system
+  currentAccountId?: string        // Active account identifier
+  
   // Configuration
   accountType: string       // "individual" or "business"
   manualApprove: boolean    // Manual request approval flag
@@ -406,6 +571,33 @@ export async function getGitHubUser(): Promise<GitHubUser>
 
 // get-copilot-token.ts - Copilot API token exchange
 export async function getCopilotToken(): Promise<CopilotTokenResponse>
+```
+
+### Utility Libraries
+
+**Directory**: [`src/lib/`](../src/lib/)
+
+**Core Utilities**: Support libraries for account management and error handling
+
+```typescript
+// account-manager.ts - Multiple account management
+export class AccountManager {
+  getCurrentAccount(): GitHubAccount | null
+  rotateAccount(reason: RotationReason): boolean
+  markAccountFailed(accountId: string, reason: string): void
+}
+
+// rotation-logging.ts - Account rotation event logging
+export function logRotation(event: RotationEvent): void
+export function getRotationHistory(limit?: number): RotationEvent[]
+
+// token-parser.ts - GitHub token validation and parsing
+export function parseGitHubToken(token: string): TokenInfo
+export function validateTokenFormat(token: string): boolean
+
+// forward-error.ts - Error forwarding utilities
+export function forwardError(error: Error, context: string): HTTPError
+export function preserveErrorContext(error: unknown): Error
 ```
 
 ### Copilot Services
@@ -553,8 +745,11 @@ graph TD
     subgraph "Test Types"
         Unit --> LibTests[Library Tests]
         Unit --> UtilTests[Utility Tests]
+        Unit --> AccountTests[Account Management Tests]
+        Unit --> RotationTests[Rotation Logging Tests]
         Integration --> RouteTests[Route Tests]
         Integration --> ServiceTests[Service Tests]
+        Integration --> TokenTests[Token Integration Tests]
         E2E --> FlowTests[Complete Flow Tests]
     end
 

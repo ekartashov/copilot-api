@@ -175,6 +175,133 @@ copilot-api start --business
 - GitHub Copilot Business subscription
 - Organization membership with Copilot access
 
+## Multiple Account Management
+
+The proxy supports managing multiple GitHub accounts with automatic rotation for improved reliability and rate limit handling.
+
+### Account Configuration
+
+**Multiple Token Setup**:
+```bash
+# Add multiple tokens via environment variables
+export GH_TOKEN_1="ghp_token_account_1"
+export GH_TOKEN_2="ghp_token_account_2"
+export GH_TOKEN_3="ghp_token_account_3"
+
+# Start with multiple accounts
+copilot-api start --accounts 3
+```
+
+**File-based Configuration**:
+```bash
+# Store tokens in separate files
+~/.local/share/copilot-api/
+├── github_token_1
+├── github_token_2
+└── github_token_3
+```
+
+### Account Rotation
+
+The system automatically rotates between accounts when:
+- **Rate limits are reached** on the current account
+- **Authentication failures** occur
+- **API errors** indicate account-specific issues
+
+```mermaid
+flowchart TD
+    Request[API Request] --> CurrentAccount[Use Current Account]
+    CurrentAccount --> Success{Request Success?}
+    Success -->|Yes| Complete[Request Complete]
+    Success -->|No| CheckError{Error Type?}
+    
+    CheckError -->|Rate Limited| Rotate[Rotate Account]
+    CheckError -->|Auth Error| Rotate
+    CheckError -->|Other Error| Fail[Return Error]
+    
+    Rotate --> Available{More Accounts?}
+    Available -->|Yes| NextAccount[Switch to Next Account]
+    Available -->|No| AllFailed[All Accounts Failed]
+    
+    NextAccount --> Retry[Retry Request]
+    Retry --> Success
+    AllFailed --> ServiceUnavailable[503 Service Unavailable]
+```
+
+### Account Health Monitoring
+
+**Health Status Tracking**:
+```typescript
+interface AccountHealth {
+  accountId: string
+  isHealthy: boolean
+  successRate: number
+  lastFailure?: Date
+  consecutiveFailures: number
+  rateLimitReset?: Date
+  estimatedRecovery?: Date
+}
+```
+
+**Health Indicators**:
+- **Success Rate**: Percentage of successful requests in last 100 attempts
+- **Consecutive Failures**: Number of recent failed requests
+- **Rate Limit Status**: Current rate limiting state
+- **Recovery Time**: Estimated time until account becomes healthy again
+
+### Rotation Logging
+
+All account rotations are logged for monitoring and debugging:
+
+```bash
+# View rotation logs
+tail -f ~/.local/share/copilot-api/rotation.log
+```
+
+**Log Format**:
+```json
+{
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "rotation": "account_1 → account_2",
+  "reason": "rate_limit_exceeded",
+  "success": true,
+  "previousHealth": {
+    "successRate": 45,
+    "consecutiveFailures": 3
+  },
+  "newAccountHealth": {
+    "successRate": 98,
+    "consecutiveFailures": 0
+  }
+}
+```
+
+### Account Management Commands
+
+**View Account Status**:
+```bash
+# Show current account information
+copilot-api accounts list
+
+# Show account health details
+copilot-api accounts health
+
+# Show rotation history
+copilot-api accounts history
+```
+
+**Manual Account Control**:
+```bash
+# Rotate to next account manually
+copilot-api accounts rotate
+
+# Set specific account as primary
+copilot-api accounts set-primary account_2
+
+# Mark account as failed (force rotation)
+copilot-api accounts mark-failed account_1
+```
+
 ## Token Security
 
 ### Storage Security
@@ -270,6 +397,28 @@ Error: Network request failed
 - Check internet connectivity
 - Verify firewall allows HTTPS to github.com
 - Try again later if GitHub services are down
+
+#### 6. Account Rotation Issues
+```
+Error: All accounts failed rotation
+```
+
+**Solutions**:
+- Check account health status: `copilot-api accounts health`
+- Verify all tokens are valid: `copilot-api accounts validate`
+- Add more accounts: Configure additional `GH_TOKEN_*` variables
+- Review rotation logs: `cat ~/.local/share/copilot-api/rotation.log`
+
+#### 7. Account Health Degradation
+```
+Warning: Account success rate below 50%
+```
+
+**Solutions**:
+- Force rotation to healthier account: `copilot-api accounts rotate`
+- Check for rate limiting patterns in logs
+- Verify account permissions and Copilot subscription status
+- Consider account-specific rate limit configuration
 
 ### Debug Authentication
 

@@ -11,11 +11,14 @@ This is a fork of [ericc-ch/copilot-api](https://github.com/ericc-ch/copilot-api
 
 - **OpenAI API Compatibility**: Translates OpenAI-style requests to GitHub Copilot format
 - **GitHub OAuth Authentication**: Secure device flow authentication with GitHub
+- **Multiple Account Management**: Support for multiple GitHub accounts with automatic rotation
 - **Rate Limiting**: Built-in request throttling with configurable limits
-- **Business Account Support**: Compatible with both individual and business Copilot subscriptions  
+- **Business Account Support**: Compatible with both individual and business Copilot subscriptions
 - **Multiple Installation Methods**: Run via npx, Docker/Podman, or from source
 - **Manual Request Approval**: Optional interactive mode for request review
 - **Vision Support**: Handle image inputs in chat completions
+- **Account Rotation Logging**: Comprehensive logging of account rotation events
+- **Error Recovery**: Automatic failover between accounts on rate limits or errors
 - **Comprehensive Testing**: 80%+ test coverage goal with unit and integration tests
 - **Stream & Non-Stream Support**: Compatible with both streaming and non-streaming responses
 
@@ -116,7 +119,7 @@ bun run start
 The project includes comprehensive testing with Bun's native test runner:
 
 ```bash
-# Run all tests
+# Run all tests (includes API key rotation test script)
 bun test
 
 # Watch mode (auto-rerun on changes)
@@ -131,9 +134,16 @@ bun run test:ci
 
 ### Test Structure
 - **`test/lib/`** - Unit tests for utilities and core functions
-- **`test/routes/`** - Integration tests for API endpoints  
+- **`test/integration/`** - Integration tests for API key rotation
+- **`test/routes/`** - Integration tests for API endpoints
 - **`test/services/`** - Service layer tests
 - **Coverage target**: 80%+ with HTML and LCOV reports
+
+### API Key Rotation Testing
+The project includes specialized tests for API key rotation functionality:
+- **Integration tests** for multiple GitHub account management
+- **Shell script tests** for API key rotation scenarios (`scripts/test-api-key-rotation.sh`)
+- **Comprehensive documentation** in `test/api-key-rotation-tests.md`
 
 ## 🔧 Usage Examples
 

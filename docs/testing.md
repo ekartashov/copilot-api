@@ -18,16 +18,25 @@ The Copilot API project uses Bun's built-in testing framework with a focus on:
 test/
 ├── setup.ts              # Global test configuration and utilities
 ├── run-tests.ts          # Custom test runner with enhanced features
+├── README.md             # Test directory documentation
+├── api-key-rotation-tests.md       # API key rotation test documentation
+├── api-key-rotation-test-summary.md # API key rotation test summary
+├── integration/          # Integration tests
+│   └── api-key-rotation.test.ts    # API key rotation integration tests
 ├── lib/                  # Unit tests for utility functions
+│   ├── account-manager.test.ts     # Account management tests
 │   ├── api-config.test.ts
 │   ├── approval.test.ts
+│   ├── forward-error.test.ts       # Forward error handling tests
 │   ├── http-error.test.ts
 │   ├── is-nullish.test.ts
 │   ├── models.test.ts
 │   ├── paths.test.ts
 │   ├── rate-limit.test.ts
+│   ├── rotation-logging.test.ts    # Rotation logging tests
 │   ├── sleep.test.ts
 │   ├── state.test.ts
+│   ├── token-parser.test.ts        # Token parser tests
 │   ├── token.test.ts
 │   ├── tokenizer.test.ts
 │   └── vscode-version.test.ts
@@ -46,6 +55,19 @@ test/
 #### 1. Unit Tests (`test/lib/`)
 
 Test isolated functions and utilities without external dependencies.
+
+**New Test Files Added:**
+- **`account-manager.test.ts`** - Tests for GitHub account management and rotation
+- **`forward-error.test.ts`** - Tests for error forwarding utility
+- **`rotation-logging.test.ts`** - Tests for rotation logging functionality
+- **`token-parser.test.ts`** - Tests for token parsing utilities
+
+#### 2. Integration Tests (`test/integration/`)
+
+Test complete workflows and API key rotation functionality.
+
+**Integration Test Files:**
+- **`api-key-rotation.test.ts`** - Tests for GitHub API key rotation system
 
 **Example: Testing utility functions**
 ```typescript

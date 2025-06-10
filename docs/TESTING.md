@@ -80,10 +80,16 @@ Global test setup that:
 
 | Command | Description |
 |---------|-------------|
-| `bun test` | Run all tests |
+| `bun test` | Run all unit tests plus API key rotation script |
 | `bun run test:watch` | Run tests in watch mode |
 | `bun run test:coverage` | Run tests with coverage report |
 | `bun run test:ci` | Run tests for CI with JSON output |
+
+**Note**: The main `bun test` command runs a comprehensive test suite that includes:
+- All unit tests in `test/lib/`
+- All route tests in `test/routes/`
+- All service tests in `test/services/`
+- API key rotation integration test script (`scripts/test-api-key-rotation.sh`)
 
 ### Custom Test Runner
 

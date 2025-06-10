@@ -41,11 +41,14 @@ bun run dev
 
 - **OpenAI API Compatibility**: Translates OpenAI-style requests to GitHub Copilot format
 - **GitHub OAuth Authentication**: Secure device flow authentication with GitHub
+- **Multiple Account Management**: Support for multiple GitHub accounts with automatic rotation
 - **Rate Limiting**: Built-in request throttling with configurable limits
 - **Business Account Support**: Compatible with both individual and business Copilot subscriptions
 - **Multiple Installation Methods**: Run via npx, Docker/Podman, or from source
 - **Manual Request Approval**: Optional interactive mode for request review
 - **Vision Support**: Handle image inputs in chat completions
+- **Account Rotation Logging**: Comprehensive logging of account rotation events
+- **Error Recovery**: Automatic failover between accounts on rate limits or errors
 - **Stream & Non-Stream Support**: Compatible with both streaming and non-streaming responses
 
 ## Architecture Overview
@@ -72,9 +75,11 @@ The proxy operates as a translation layer between OpenAI-compatible clients and 
 
 1. **Request Processing**: Receives OpenAI-format requests from clients
 2. **Authentication**: Manages GitHub OAuth and Copilot token lifecycle
-3. **Translation**: Converts between OpenAI and Copilot API formats
-4. **Rate Management**: Enforces configurable rate limits and optional manual approval
-5. **Response Handling**: Streams or returns formatted responses to clients
+3. **Account Management**: Handles multiple GitHub accounts with automatic rotation
+4. **Translation**: Converts between OpenAI and Copilot API formats
+5. **Rate Management**: Enforces configurable rate limits and optional manual approval
+6. **Error Recovery**: Automatically switches between accounts on failures or rate limits
+7. **Response Handling**: Streams or returns formatted responses to clients
 
 ## Documentation Structure
 

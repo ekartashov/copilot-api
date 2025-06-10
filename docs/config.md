@@ -15,16 +15,28 @@ The Copilot API proxy can be configured through:
 
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
-| `GH_TOKEN` | Pre-generated GitHub personal access token | None | `ghp_xxxxxxxxxxxx` |
+| `GH_TOKEN` | Primary GitHub personal access token | None | `ghp_xxxxxxxxxxxx` |
+| `GH_TOKEN_1` | First account token (for multi-account) | None | `ghp_account1_token` |
+| `GH_TOKEN_2` | Second account token (for multi-account) | None | `ghp_account2_token` |
+| `GH_TOKEN_N` | Additional account tokens (N=3,4,5...) | None | `ghp_accountN_token` |
 | `NODE_ENV` | Runtime environment mode | `development` | `production` |
 
 **Usage Examples:**
 ```bash
-# Use pre-generated token
+# Single account (traditional)
 GH_TOKEN=ghp_your_token copilot-api start
 
-# Production environment
-NODE_ENV=production copilot-api start
+# Multiple accounts for rotation
+GH_TOKEN_1=ghp_account1_token \
+GH_TOKEN_2=ghp_account2_token \
+GH_TOKEN_3=ghp_account3_token \
+copilot-api start --accounts 3
+
+# Production environment with multiple accounts
+NODE_ENV=production \
+GH_TOKEN_1=ghp_prod_account1 \
+GH_TOKEN_2=ghp_prod_account2 \
+copilot-api start --accounts 2
 ```
 
 ### Server Configuration
@@ -65,6 +77,9 @@ copilot-api start [options]
 | `--rate-limit`, `-r` | string | None | Rate limit in seconds between requests |
 | `--wait`, `-w` | boolean | `false` | Wait instead of error when rate limit is hit |
 | `--github-token`, `-g` | string | None | Provide GitHub token directly |
+| `--accounts`, `-a` | number | `1` | Number of GitHub accounts to use for rotation |
+| `--rotation-strategy` | string | `"round_robin"` | Account rotation strategy (round_robin, failover) |
+| `--health-check-interval` | number | `300` | Account health check interval in seconds |
 
 ### Auth Command Options
 
@@ -140,6 +155,8 @@ The proxy maintains runtime state in [`src/lib/state.ts`](../src/lib/state.ts):
 interface State {
   githubToken?: string        // GitHub personal access token
   copilotToken?: string      // Copilot API token (auto-generated)
+  accountManager?: AccountManager // Multi-account rotation system
+  currentAccountId?: string   // Active account identifier
   accountType: string        // "individual" or "business"
   models?: ModelsResponse    // Cached available models
   vsCodeVersion?: string     // VS Code version for API headers
@@ -178,6 +195,19 @@ export const PATHS = {
 **Platform-specific paths:**
 - **Linux/macOS**: `~/.local/share/copilot-api/`
 - **Windows**: `%APPDATA%\copilot-api\`
+
+**Account Management Paths:**
+```typescript
+// Multi-account token storage
+const ACCOUNT_TOKENS_DIR = path.join(APP_DIR, "accounts")
+const ROTATION_LOG_PATH = path.join(APP_DIR, "rotation.log")
+
+export const ACCOUNT_PATHS = {
+  TOKENS_DIR: ACCOUNT_TOKENS_DIR,        // ~/.local/share/copilot-api/accounts/
+  ROTATION_LOG: ROTATION_LOG_PATH,       // ~/.local/share/copilot-api/rotation.log
+  TOKEN_FILE: (id: string) => path.join(ACCOUNT_TOKENS_DIR, `github_token_${id}`)
+}
+```
 
 ## API Configuration
 
@@ -255,11 +285,42 @@ NODE_ENV=production copilot-api start \
   --port 4141
 ```
 
+### Multi-Account Setup
+
+```bash
+# Basic multi-account rotation
+GH_TOKEN_1=ghp_account1_token \
+GH_TOKEN_2=ghp_account2_token \
+GH_TOKEN_3=ghp_account3_token \
+copilot-api start --accounts 3
+
+# Production multi-account with custom rotation strategy
+NODE_ENV=production \
+GH_TOKEN_1=ghp_prod_account1 \
+GH_TOKEN_2=ghp_prod_account2 \
+GH_TOKEN_3=ghp_prod_account3 \
+copilot-api start \
+  --accounts 3 \
+  --rotation-strategy failover \
+  --health-check-interval 600 \
+  --business \
+  --rate-limit 30 \
+  --wait
+```
+
 ### Docker Configuration
 
 **Environment file (`.env`):**
 ```bash
+# Single account
 GH_TOKEN=ghp_your_token_here
+NODE_ENV=production
+PORT=4141
+
+# Multi-account configuration
+GH_TOKEN_1=ghp_account1_token
+GH_TOKEN_2=ghp_account2_token
+GH_TOKEN_3=ghp_account3_token
 NODE_ENV=production
 PORT=4141
 ```
@@ -273,9 +334,13 @@ services:
     ports:
       - "${PORT:-4141}:${PORT:-4141}"
     environment:
-      - GH_TOKEN=${GH_TOKEN}
+      - GH_TOKEN=${GH_TOKEN:-}
+      - GH_TOKEN_1=${GH_TOKEN_1:-}
+      - GH_TOKEN_2=${GH_TOKEN_2:-}
+      - GH_TOKEN_3=${GH_TOKEN_3:-}
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-4141}
+    command: ["start", "--accounts", "3", "--rotation-strategy", "round_robin"]
     restart: unless-stopped
 ```
 
@@ -477,6 +542,30 @@ env | grep GH_TOKEN
 
 # Verify in Docker
 docker exec container-name env | grep GH_TOKEN
+```
+
+#### 4. Account Management Issues
+```bash
+# Check account configuration
+env | grep GH_TOKEN_
+
+# Verify account manager initialization
+copilot-api start --verbose --accounts 3
+
+# Check rotation logs
+tail -f ~/.local/share/copilot-api/rotation.log
+```
+
+#### 5. Token File Structure Issues
+```bash
+# Check account token files
+ls -la ~/.local/share/copilot-api/accounts/
+
+# Fix permissions for all account tokens
+chmod 600 ~/.local/share/copilot-api/accounts/github_token_*
+
+# Verify token format
+copilot-api accounts validate
 ```
 
 ### Configuration Validation

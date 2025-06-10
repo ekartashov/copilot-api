@@ -30,7 +30,7 @@ npx copilot-api@0.3.0 start
 
 ### From Source
 ```bash
-git clone https://github.com/ericc-ch/copilot-api.git
+git clone https://github.com/ekartashov/copilot-api.git
 cd copilot-api
 bun install
 
