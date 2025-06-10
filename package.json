@@ -7,13 +7,13 @@
     "github-copilot",
     "openai-compatible"
   ],
-  "homepage": "https://github.com/ericc-ch/copilot-api",
-  "bugs": "https://github.com/ericc-ch/copilot-api/issues",
+  "homepage": "https://github.com/ekartashov/copilot-api",
+  "bugs": "https://github.com/ekartashov/copilot-api/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ericc-ch/copilot-api.git"
+    "url": "git+https://github.com/ekartashov/copilot-api.git"
   },
-  "author": "Erick Christian <erickchristian48@gmail.com>",
+  "author": "ekartashov <ekartashov@ethz.ch>",
   "type": "module",
   "bin": {
     "copilot-api": "./dist/main.js"
@@ -30,7 +30,7 @@
     "prepare": "simple-git-hooks",
     "release": "bumpp && bun publish --access public",
     "start": "NODE_ENV=production bun run ./src/main.ts",
-    "test": "bun test",
+    "test": "bun test test/lib/approval.test.ts test/lib/api-config.test.ts test/lib/forward-error.test.ts test/lib/http-error.test.ts test/lib/is-nullish.test.ts test/lib/models.test.ts test/lib/paths.test.ts test/lib/rate-limit.test.ts test/lib/sleep.test.ts test/lib/state.test.ts test/lib/token.test.ts test/lib/tokenizer.test.ts test/lib/vscode-version.test.ts test/routes test/services && ./scripts/test-api-key-rotation.sh",
     "test:ci": "bun test --coverage --reporter=json",
     "test:coverage": "bun test --coverage",
     "test:watch": "bun test --watch"

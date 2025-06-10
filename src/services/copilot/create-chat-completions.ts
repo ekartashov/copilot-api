@@ -2,7 +2,7 @@ import { events } from "fetch-event-stream"
 
 import { copilotHeaders, copilotBaseUrl } from "~/lib/api-config"
 import { HTTPError } from "~/lib/http-error"
-import { state } from "~/lib/state"
+import { state, accountManager } from "~/lib/state"
 
 export const createChatCompletions = async (
   payload: ChatCompletionsPayload,
@@ -25,8 +25,14 @@ export const createChatCompletions = async (
     body: JSON.stringify(payload),
   })
 
-  if (!response.ok)
+  if (!response.ok) {
+    // Handle rate limiting with account rotation
+    if (response.status === 429) {
+      accountManager.rotateOnRateLimit(response.status)
+      accountManager.updateState(state)
+    }
     throw new HTTPError("Failed to create chat completions", response)
+  }
 
   if (payload.stream) {
     return events(response)

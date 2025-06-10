@@ -7,7 +7,7 @@ import { serve, type ServerHandler } from "srvx"
 import { auth } from "./auth"
 import { cacheModels } from "./lib/models"
 import { ensurePaths } from "./lib/paths"
-import { state } from "./lib/state"
+import { state, accountManager } from "./lib/state"
 import { setupCopilotToken, setupGitHubToken } from "./lib/token"
 import { cacheVSCodeVersion } from "./lib/vscode-version"
 import { server } from "./server"
@@ -22,7 +22,7 @@ interface RunServerOptions {
   githubToken?: string
 }
 
-export async function runServer(options: RunServerOptions): Promise<void> {
+function setupConfiguration(options: RunServerOptions): void {
   if (options.verbose) {
     consola.level = 5
     consola.info("Verbose logging enabled")
@@ -36,22 +36,58 @@ export async function runServer(options: RunServerOptions): Promise<void> {
   state.manualApprove = options.manual
   state.rateLimitSeconds = options.rateLimit
   state.rateLimitWait = options.rateLimitWait
+}
 
+async function setupTokens(options: RunServerOptions): Promise<void> {
+  try {
+    await accountManager.initialize()
+
+    if (options.githubToken) {
+      // If a specific token is provided via CLI, set it directly
+      state.githubToken = options.githubToken
+      consola.info("Using provided GitHub token")
+    } else {
+      // Use account manager to set the current token
+      accountManager.updateState(state)
+
+      // Only call setupGitHubToken if no tokens were found by account manager
+      if (!state.githubToken) {
+        await setupGitHubToken()
+      }
+    }
+  } catch {
+    // Fall back to legacy token setup if account manager fails
+    consola.warn(
+      "Account manager initialization failed, falling back to legacy token setup",
+    )
+    const providedToken = options.githubToken
+    if (providedToken) {
+      // eslint-disable-next-line require-atomic-updates
+      state.githubToken = providedToken
+      consola.info("Using provided GitHub token")
+    } else {
+      await setupGitHubToken()
+    }
+  }
+}
+
+export async function runServer(options: RunServerOptions): Promise<void> {
+  setupConfiguration(options)
   await ensurePaths()
   await cacheVSCodeVersion()
-
-  if (options.githubToken) {
-    state.githubToken = options.githubToken
-    consola.info("Using provided GitHub token")
-  } else {
-    await setupGitHubToken()
-  }
-
+  await setupTokens(options)
   await setupCopilotToken()
   await cacheModels()
 
   const serverUrl = `http://localhost:${options.port}`
-  consola.box(`Server started at ${serverUrl}`)
+  const accountCount = accountManager.getAccountCount()
+  if (accountCount > 1) {
+    consola.box(
+      `Server started at ${serverUrl}\nAccount rotation: ${accountCount} accounts configured`,
+    )
+  } else {
+    consola.box(`Server started at ${serverUrl}`)
+  }
 
   serve({
     fetch: server.fetch as ServerHandler,

@@ -1,5 +1,7 @@
 import type { ModelsResponse } from "~/services/copilot/get-models"
 
+import { AccountManager } from "./account-manager"
+
 export interface State {
   githubToken?: string
   copilotToken?: string
@@ -23,3 +25,6 @@ export const state: State = {
   rateLimitWait: false,
   visionEnabled: false,
 }
+
+// Global account manager instance
+export const accountManager = new AccountManager()

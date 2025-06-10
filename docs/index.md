@@ -147,7 +147,7 @@ This project is an educational reverse-engineering effort. Please review:
 
 ## Getting Help
 
-- **Issues**: Report bugs on [GitHub Issues](https://github.com/ericc-ch/copilot-api/issues)
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/ekartashov/copilot-api/issues)
 - **Discussions**: Community support and questions
 - **Documentation**: This documentation covers most use cases
 
