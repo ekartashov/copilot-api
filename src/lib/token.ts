@@ -10,10 +10,10 @@ import { pollAccessToken } from "~/services/github/poll-access-token"
 import { HTTPError } from "./http-error"
 import { state } from "./state"
 
-const readGithubToken = () => fs.readFile(PATHS.GITHUB_TOKEN_PATH, "utf8")
+const readGithubToken = () => fs.readFile(PATHS.GH_TOKEN_PATH, "utf8")
 
 const writeGithubToken = (token: string) =>
-  fs.writeFile(PATHS.GITHUB_TOKEN_PATH, token)
+  fs.writeFile(PATHS.GH_TOKEN_PATH, token)
 
 export const setupCopilotToken = async () => {
   const { token, refresh_in } = await getCopilotToken()

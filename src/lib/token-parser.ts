@@ -10,7 +10,7 @@ export interface TokenAccount {
  * Format: "label1:token1,label2:token2,token3" (unlabeled tokens get auto-generated labels)
  */
 export function parseTokensFromEnv(): Array<TokenAccount> {
-  const envValue = process.env.GITHUB_TOKENS
+  const envValue = process.env.GH_TOKENS
   if (!envValue) {
     return []
   }
@@ -32,10 +32,10 @@ export function parseTokensFromFile(content: string): Array<TokenAccount> {
 }
 
 /**
- * Load tokens from file specified in GITHUB_TOKENS_FILE environment variable
+ * Load tokens from file specified in GH_TOKENS_FILE environment variable
  */
 export async function loadTokensFromFile(): Promise<Array<TokenAccount>> {
-  const filePath = process.env.GITHUB_TOKENS_FILE
+  const filePath = process.env.GH_TOKENS_FILE
   if (!filePath) {
     return []
   }
@@ -53,7 +53,7 @@ export async function loadTokensFromFile(): Promise<Array<TokenAccount>> {
 
 /**
  * Get all tokens from environment, file, or fallback to single token
- * Priority: GITHUB_TOKENS > GITHUB_TOKENS_FILE > GITHUB_TOKEN
+ * Priority: GH_TOKENS > GH_TOKENS_FILE > GH_TOKEN
  */
 export async function getAllTokens(): Promise<Array<TokenAccount>> {
   // First try environment variable
@@ -68,8 +68,8 @@ export async function getAllTokens(): Promise<Array<TokenAccount>> {
     return fileTokens
   }
 
-  // Finally fall back to single GITHUB_TOKEN
-  const singleToken = process.env.GITHUB_TOKEN
+  // Finally fall back to single GH_TOKEN
+  const singleToken = process.env.GH_TOKEN
   if (singleToken) {
     return [{ label: "account-1", token: singleToken }]
   }

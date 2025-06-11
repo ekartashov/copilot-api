@@ -18,7 +18,7 @@ export async function runAuth(options: RunAuthOptions): Promise<void> {
 
   await ensurePaths()
   await setupGitHubToken({ force: true })
-  consola.success("GitHub token written to", PATHS.GITHUB_TOKEN_PATH)
+  consola.success("GitHub token written to", PATHS.GH_TOKEN_PATH)
 }
 
 export const auth = defineCommand({

@@ -31,7 +31,7 @@ describe("PATHS", () => {
     const expectedTokenPath = path.join(expectedAppDir, "github_token")
 
     expect(PATHS.APP_DIR).toBe(expectedAppDir)
-    expect(PATHS.GITHUB_TOKEN_PATH).toBe(expectedTokenPath)
+    expect(PATHS.GH_TOKEN_PATH).toBe(expectedTokenPath)
   })
 
   test("APP_DIR should be under user's home directory", () => {
@@ -39,9 +39,9 @@ describe("PATHS", () => {
     expect(PATHS.APP_DIR).toContain(".local/share/copilot-api")
   })
 
-  test("GITHUB_TOKEN_PATH should be in APP_DIR", () => {
-    expect(PATHS.GITHUB_TOKEN_PATH).toContain(PATHS.APP_DIR)
-    expect(PATHS.GITHUB_TOKEN_PATH).toEndWith("github_token")
+  test("GH_TOKEN_PATH should be in APP_DIR", () => {
+    expect(PATHS.GH_TOKEN_PATH).toContain(PATHS.APP_DIR)
+    expect(PATHS.GH_TOKEN_PATH).toEndWith("github_token")
   })
 })
 
@@ -69,7 +69,7 @@ describe("ensurePaths", () => {
     await ensurePaths()
 
     expect(mockFS.access).toHaveBeenCalledWith(
-      PATHS.GITHUB_TOKEN_PATH,
+      PATHS.GH_TOKEN_PATH,
       mockFS.constants.W_OK,
     )
     expect(mockFS.writeFile).not.toHaveBeenCalled()
@@ -82,11 +82,11 @@ describe("ensurePaths", () => {
     await ensurePaths()
 
     expect(mockFS.access).toHaveBeenCalledWith(
-      PATHS.GITHUB_TOKEN_PATH,
+      PATHS.GH_TOKEN_PATH,
       mockFS.constants.W_OK,
     )
-    expect(mockFS.writeFile).toHaveBeenCalledWith(PATHS.GITHUB_TOKEN_PATH, "")
-    expect(mockFS.chmod).toHaveBeenCalledWith(PATHS.GITHUB_TOKEN_PATH, 0o600)
+    expect(mockFS.writeFile).toHaveBeenCalledWith(PATHS.GH_TOKEN_PATH, "")
+    expect(mockFS.chmod).toHaveBeenCalledWith(PATHS.GH_TOKEN_PATH, 0o600)
   })
 
   test("should handle mkdir errors gracefully", async () => {

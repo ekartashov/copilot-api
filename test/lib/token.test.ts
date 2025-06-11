@@ -27,7 +27,7 @@ mock.module("node:fs/promises", () => ({
 mock.module("~/lib/paths", () => ({
   PATHS: {
     APP_DIR: "/mock/app/dir",
-    GITHUB_TOKEN_PATH: "/mock/app/dir/github_token",
+    GH_TOKEN_PATH: "/mock/app/dir/github_token",
   },
   ensurePaths: mock(() => Promise.resolve()),
 }))

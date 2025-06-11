@@ -476,7 +476,7 @@ describe("Account Manager", () => {
   })
 
   describe("Backward compatibility", () => {
-    test("should work with legacy single GITHUB_TOKEN setup", async () => {
+    test("should work with legacy single GH_TOKEN setup", async () => {
       const accounts: Array<TokenAccount> = [
         { label: "account-1", token: "legacy-token" },
       ]

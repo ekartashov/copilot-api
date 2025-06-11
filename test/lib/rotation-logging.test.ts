@@ -281,12 +281,12 @@ describe("Rotation Logging Integration", () => {
       const { logTokenParsingError } = require("../../src/lib/rotation-logging")
 
       logTokenParsingError(
-        "GITHUB_TOKENS",
+        "GH_TOKENS",
         "Invalid format: missing colon separator",
       )
 
       expect(mockConsola.error).toHaveBeenCalledWith(
-        "Failed to parse tokens from GITHUB_TOKENS: Invalid format: missing colon separator",
+        "Failed to parse tokens from GH_TOKENS: Invalid format: missing colon separator",
       )
     })
 

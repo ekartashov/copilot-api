@@ -11,15 +11,15 @@ describe("API Key Rotation Integration", () => {
   beforeEach(async () => {
     // Save original environment
     originalEnv = {
-      GITHUB_TOKENS: process.env.GITHUB_TOKENS,
-      GITHUB_TOKENS_FILE: process.env.GITHUB_TOKENS_FILE,
-      GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+      GH_TOKENS: process.env.GH_TOKENS,
+      GH_TOKENS_FILE: process.env.GH_TOKENS_FILE,
+      GH_TOKEN: process.env.GH_TOKEN,
     }
 
     // Clear all environment variables to ensure clean state
-    delete process.env.GITHUB_TOKENS
-    delete process.env.GITHUB_TOKENS_FILE
-    delete process.env.GITHUB_TOKEN
+    delete process.env.GH_TOKENS
+    delete process.env.GH_TOKENS_FILE
+    delete process.env.GH_TOKEN
 
     // Clear all mocks and module cache
     mock.restore()
@@ -65,22 +65,22 @@ describe("API Key Rotation Integration", () => {
 
   afterEach(() => {
     // Restore original environment
-    if (originalEnv.GITHUB_TOKENS !== undefined) {
-      process.env.GITHUB_TOKENS = originalEnv.GITHUB_TOKENS
+    if (originalEnv.GH_TOKENS !== undefined) {
+      process.env.GH_TOKENS = originalEnv.GH_TOKENS
     } else {
-      delete process.env.GITHUB_TOKENS
+      delete process.env.GH_TOKENS
     }
 
-    if (originalEnv.GITHUB_TOKENS_FILE !== undefined) {
-      process.env.GITHUB_TOKENS_FILE = originalEnv.GITHUB_TOKENS_FILE
+    if (originalEnv.GH_TOKENS_FILE !== undefined) {
+      process.env.GH_TOKENS_FILE = originalEnv.GH_TOKENS_FILE
     } else {
-      delete process.env.GITHUB_TOKENS_FILE
+      delete process.env.GH_TOKENS_FILE
     }
 
-    if (originalEnv.GITHUB_TOKEN !== undefined) {
-      process.env.GITHUB_TOKEN = originalEnv.GITHUB_TOKEN
+    if (originalEnv.GH_TOKEN !== undefined) {
+      process.env.GH_TOKEN = originalEnv.GH_TOKEN
     } else {
-      delete process.env.GITHUB_TOKEN
+      delete process.env.GH_TOKEN
     }
 
     // Clear mocks after each test
@@ -90,11 +90,11 @@ describe("API Key Rotation Integration", () => {
   describe("End-to-end rotation workflow", () => {
     test("should parse tokens, initialize manager, and handle rotation", async () => {
       // Clear environment completely and setup with multiple tokens
-      delete process.env.GITHUB_TOKENS
-      delete process.env.GITHUB_TOKENS_FILE
-      delete process.env.GITHUB_TOKEN
+      delete process.env.GH_TOKENS
+      delete process.env.GH_TOKENS_FILE
+      delete process.env.GH_TOKEN
 
-      process.env.GITHUB_TOKENS = "alice:token1,bob:token2,token3"
+      process.env.GH_TOKENS = "alice:token1,bob:token2,token3"
 
       // Import fresh modules after setting environment
       const tokenParserModule = await import("../../src/lib/token-parser")
@@ -129,9 +129,9 @@ describe("API Key Rotation Integration", () => {
 
     test("should handle file-based token configuration", async () => {
       // Clear environment tokens
-      delete process.env.GITHUB_TOKENS
-      delete process.env.GITHUB_TOKEN
-      process.env.GITHUB_TOKENS_FILE = "/mock/path/tokens.txt"
+      delete process.env.GH_TOKENS
+      delete process.env.GH_TOKEN
+      process.env.GH_TOKENS_FILE = "/mock/path/tokens.txt"
 
       // Mock file reading with expected content
       mockReadFile.mockResolvedValue("dev:token1\nprod:token2\nstaging:token3")
@@ -149,9 +149,9 @@ describe("API Key Rotation Integration", () => {
 
     test("should gracefully fall back to single token mode", async () => {
       // Setup single token
-      delete process.env.GITHUB_TOKENS
-      delete process.env.GITHUB_TOKENS_FILE
-      process.env.GITHUB_TOKEN = "legacy-token"
+      delete process.env.GH_TOKENS
+      delete process.env.GH_TOKENS_FILE
+      process.env.GH_TOKEN = "legacy-token"
 
       // Import fresh modules
       const tokenParserModule = await import("../../src/lib/token-parser")
@@ -173,7 +173,7 @@ describe("API Key Rotation Integration", () => {
 
   describe("Real-world usage scenarios", () => {
     test("should handle rapid successive rate limits", async () => {
-      process.env.GITHUB_TOKENS = "fast:token1,medium:token2,slow:token3"
+      process.env.GH_TOKENS = "fast:token1,medium:token2,slow:token3"
 
       const accountManagerModule = await import("../../src/lib/account-manager")
       const manager = new accountManagerModule.AccountManager()
@@ -193,7 +193,7 @@ describe("API Key Rotation Integration", () => {
     })
 
     test("should track usage statistics across rotations", async () => {
-      process.env.GITHUB_TOKENS = "analytics:token1,metrics:token2"
+      process.env.GH_TOKENS = "analytics:token1,metrics:token2"
 
       const accountManagerModule = await import("../../src/lib/account-manager")
       const manager = new accountManagerModule.AccountManager()
@@ -214,7 +214,7 @@ describe("API Key Rotation Integration", () => {
     })
 
     test("should handle all accounts becoming rate limited", async () => {
-      process.env.GITHUB_TOKENS = "busy1:token1,busy2:token2"
+      process.env.GH_TOKENS = "busy1:token1,busy2:token2"
 
       const accountManagerModule = await import("../../src/lib/account-manager")
       const manager = new accountManagerModule.AccountManager()
@@ -233,8 +233,8 @@ describe("API Key Rotation Integration", () => {
 
   describe("Error handling and edge cases", () => {
     test("should handle malformed token environment variables", async () => {
-      process.env.GITHUB_TOKENS = "invalid::token,another:bad:format:"
-      delete process.env.GITHUB_TOKEN
+      process.env.GH_TOKENS = "invalid::token,another:bad:format:"
+      delete process.env.GH_TOKEN
 
       const tokenParserModule = await import("../../src/lib/token-parser")
 
@@ -244,7 +244,7 @@ describe("API Key Rotation Integration", () => {
     })
 
     test("should handle empty or whitespace-only configurations", async () => {
-      process.env.GITHUB_TOKENS = "   ,  , \n"
+      process.env.GH_TOKENS = "   ,  , \n"
 
       const tokenParserModule = await import("../../src/lib/token-parser")
       const tokens = tokenParserModule.parseTokensFromEnv()
@@ -253,9 +253,9 @@ describe("API Key Rotation Integration", () => {
     })
 
     test("should handle file read failures gracefully", async () => {
-      delete process.env.GITHUB_TOKENS
-      delete process.env.GITHUB_TOKEN
-      process.env.GITHUB_TOKENS_FILE = "/nonexistent/path.txt"
+      delete process.env.GH_TOKENS
+      delete process.env.GH_TOKEN
+      process.env.GH_TOKENS_FILE = "/nonexistent/path.txt"
 
       // Mock file read failure
       mockReadFile.mockImplementation(() =>
@@ -270,7 +270,7 @@ describe("API Key Rotation Integration", () => {
     })
 
     test("should prevent infinite rotation loops", async () => {
-      process.env.GITHUB_TOKENS = "loop1:token1,loop2:token2"
+      process.env.GH_TOKENS = "loop1:token1,loop2:token2"
 
       const accountManagerModule = await import("../../src/lib/account-manager")
       const manager = new accountManagerModule.AccountManager()
@@ -289,9 +289,9 @@ describe("API Key Rotation Integration", () => {
   describe("Backward compatibility", () => {
     test("should maintain exact compatibility with existing single-token setup", async () => {
       // Traditional setup
-      delete process.env.GITHUB_TOKENS
-      delete process.env.GITHUB_TOKENS_FILE
-      process.env.GITHUB_TOKEN = "traditional-token"
+      delete process.env.GH_TOKENS
+      delete process.env.GH_TOKENS_FILE
+      process.env.GH_TOKEN = "traditional-token"
 
       const accountManagerModule = await import("../../src/lib/account-manager")
       const tokenParserModule = await import("../../src/lib/token-parser")
@@ -317,7 +317,7 @@ describe("API Key Rotation Integration", () => {
     })
 
     test("should work with existing rate limiting mechanism", async () => {
-      process.env.GITHUB_TOKENS = "rate1:token1,rate2:token2"
+      process.env.GH_TOKENS = "rate1:token1,rate2:token2"
 
       const accountManagerModule = await import("../../src/lib/account-manager")
       const rateLimitModule = await import("../../src/lib/rate-limit")
@@ -343,10 +343,10 @@ describe("API Key Rotation Integration", () => {
   })
 
   describe("Configuration precedence", () => {
-    test("should prioritize GITHUB_TOKENS over file and fallback", async () => {
-      process.env.GITHUB_TOKENS = "priority:from-env"
-      process.env.GITHUB_TOKENS_FILE = "/mock/file.txt"
-      process.env.GITHUB_TOKEN = "fallback-token"
+    test("should prioritize GH_TOKENS over file and fallback", async () => {
+      process.env.GH_TOKENS = "priority:from-env"
+      process.env.GH_TOKENS_FILE = "/mock/file.txt"
+      process.env.GH_TOKEN = "fallback-token"
 
       const tokenParserModule = await import("../../src/lib/token-parser")
       const tokens = await tokenParserModule.getAllTokens()
@@ -355,9 +355,9 @@ describe("API Key Rotation Integration", () => {
     })
 
     test("should use file when env var not set", async () => {
-      delete process.env.GITHUB_TOKENS
-      delete process.env.GITHUB_TOKEN
-      process.env.GITHUB_TOKENS_FILE = "/mock/file.txt"
+      delete process.env.GH_TOKENS
+      delete process.env.GH_TOKEN
+      process.env.GH_TOKENS_FILE = "/mock/file.txt"
 
       // Mock file reading
       mockReadFile.mockResolvedValue("file:from-file")
@@ -369,9 +369,9 @@ describe("API Key Rotation Integration", () => {
     })
 
     test("should use fallback when no other sources available", async () => {
-      delete process.env.GITHUB_TOKENS
-      delete process.env.GITHUB_TOKENS_FILE
-      process.env.GITHUB_TOKEN = "final-fallback"
+      delete process.env.GH_TOKENS
+      delete process.env.GH_TOKENS_FILE
+      process.env.GH_TOKEN = "final-fallback"
 
       const tokenParserModule = await import("../../src/lib/token-parser")
       const tokens = await tokenParserModule.getAllTokens()
@@ -388,7 +388,7 @@ describe("API Key Rotation Integration", () => {
         (_, i) => `account-${i + 1}:token${i + 1}`,
       ).join(",")
 
-      process.env.GITHUB_TOKENS = manyTokens
+      process.env.GH_TOKENS = manyTokens
 
       const accountManagerModule = await import("../../src/lib/account-manager")
       const tokenParserModule = await import("../../src/lib/token-parser")
@@ -405,7 +405,7 @@ describe("API Key Rotation Integration", () => {
     })
 
     test("should not leak memory during rotations", async () => {
-      process.env.GITHUB_TOKENS = "mem1:token1,mem2:token2,mem3:token3"
+      process.env.GH_TOKENS = "mem1:token1,mem2:token2,mem3:token3"
 
       const accountManagerModule = await import("../../src/lib/account-manager")
       const manager = new accountManagerModule.AccountManager()

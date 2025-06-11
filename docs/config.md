@@ -184,11 +184,11 @@ Token and data storage locations:
 ```typescript
 // From src/lib/paths.ts
 const APP_DIR = path.join(os.homedir(), ".local", "share", "copilot-api")
-const GITHUB_TOKEN_PATH = path.join(APP_DIR, "github_token")
+const GH_TOKEN_PATH = path.join(APP_DIR, "github_token")
 
 export const PATHS = {
   APP_DIR,                    // ~/.local/share/copilot-api/
-  GITHUB_TOKEN_PATH,         // ~/.local/share/copilot-api/github_token
+  GH_TOKEN_PATH,             // ~/.local/share/copilot-api/github_token
 }
 ```
 

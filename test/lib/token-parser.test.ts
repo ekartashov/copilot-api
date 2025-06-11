@@ -6,22 +6,22 @@ describe("Token Parser", () => {
   beforeEach(() => {
     // Save original environment
     originalEnv = {
-      GITHUB_TOKENS: process.env.GITHUB_TOKENS,
-      GITHUB_TOKENS_FILE: process.env.GITHUB_TOKENS_FILE,
-      GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+      GH_TOKENS: process.env.GH_TOKENS,
+      GH_TOKENS_FILE: process.env.GH_TOKENS_FILE,
+      GH_TOKEN: process.env.GH_TOKEN,
     }
   })
 
   afterEach(() => {
     // Restore original environment
-    process.env.GITHUB_TOKENS = originalEnv.GITHUB_TOKENS
-    process.env.GITHUB_TOKENS_FILE = originalEnv.GITHUB_TOKENS_FILE
-    process.env.GITHUB_TOKEN = originalEnv.GITHUB_TOKEN
+    process.env.GH_TOKENS = originalEnv.GH_TOKENS
+    process.env.GH_TOKENS_FILE = originalEnv.GH_TOKENS_FILE
+    process.env.GH_TOKEN = originalEnv.GH_TOKEN
   })
 
   describe("parseTokensFromEnv", () => {
     test("should parse comma-separated tokens with labels", () => {
-      process.env.GITHUB_TOKENS = "alice:token1,bob:token2,charlie:token3"
+      process.env.GH_TOKENS = "alice:token1,bob:token2,charlie:token3"
 
       const { parseTokensFromEnv } = require("../../src/lib/token-parser")
       const result = parseTokensFromEnv()
@@ -34,7 +34,7 @@ describe("Token Parser", () => {
     })
 
     test("should parse mixed labeled and unlabeled tokens", () => {
-      process.env.GITHUB_TOKENS = "alice:token1,token2,bob:token3,token4"
+      process.env.GH_TOKENS = "alice:token1,token2,bob:token3,token4"
 
       const { parseTokensFromEnv } = require("../../src/lib/token-parser")
       const result = parseTokensFromEnv()
@@ -48,7 +48,7 @@ describe("Token Parser", () => {
     })
 
     test("should parse all unlabeled tokens with auto-generated labels", () => {
-      process.env.GITHUB_TOKENS = "token1,token2,token3"
+      process.env.GH_TOKENS = "token1,token2,token3"
 
       const { parseTokensFromEnv } = require("../../src/lib/token-parser")
       const result = parseTokensFromEnv()
@@ -61,7 +61,7 @@ describe("Token Parser", () => {
     })
 
     test("should handle single token with label", () => {
-      process.env.GITHUB_TOKENS = "alice:token1"
+      process.env.GH_TOKENS = "alice:token1"
 
       const { parseTokensFromEnv } = require("../../src/lib/token-parser")
       const result = parseTokensFromEnv()
@@ -70,7 +70,7 @@ describe("Token Parser", () => {
     })
 
     test("should handle single token without label", () => {
-      process.env.GITHUB_TOKENS = "token1"
+      process.env.GH_TOKENS = "token1"
 
       const { parseTokensFromEnv } = require("../../src/lib/token-parser")
       const result = parseTokensFromEnv()
@@ -78,8 +78,8 @@ describe("Token Parser", () => {
       expect(result).toEqual([{ label: "account-1", token: "token1" }])
     })
 
-    test("should handle empty GITHUB_TOKENS", () => {
-      process.env.GITHUB_TOKENS = ""
+    test("should handle empty GH_TOKENS", () => {
+      process.env.GH_TOKENS = ""
 
       const { parseTokensFromEnv } = require("../../src/lib/token-parser")
       const result = parseTokensFromEnv()
@@ -88,7 +88,7 @@ describe("Token Parser", () => {
     })
 
     test("should handle tokens with whitespace", () => {
-      process.env.GITHUB_TOKENS = " alice:token1 , bob:token2 , token3 "
+      process.env.GH_TOKENS = " alice:token1 , bob:token2 , token3 "
 
       const { parseTokensFromEnv } = require("../../src/lib/token-parser")
       const result = parseTokensFromEnv()
@@ -101,7 +101,7 @@ describe("Token Parser", () => {
     })
 
     test("should handle tokens with special characters in labels", () => {
-      process.env.GITHUB_TOKENS = "dev-alice:token1,prod_bob:token2"
+      process.env.GH_TOKENS = "dev-alice:token1,prod_bob:token2"
 
       const { parseTokensFromEnv } = require("../../src/lib/token-parser")
       const result = parseTokensFromEnv()
@@ -112,9 +112,9 @@ describe("Token Parser", () => {
       ])
     })
 
-    test("should return empty array when GITHUB_TOKENS is not set", () => {
-      delete process.env.GITHUB_TOKENS
-      process.env.GITHUB_TOKEN = "fallback-token"
+    test("should return empty array when GH_TOKENS is not set", () => {
+      delete process.env.GH_TOKENS
+      process.env.GH_TOKEN = "fallback-token"
 
       const { parseTokensFromEnv } = require("../../src/lib/token-parser")
       const result = parseTokensFromEnv()
@@ -123,8 +123,8 @@ describe("Token Parser", () => {
     })
 
     test("should return empty array when no tokens are available", () => {
-      delete process.env.GITHUB_TOKENS
-      delete process.env.GITHUB_TOKEN
+      delete process.env.GH_TOKENS
+      delete process.env.GH_TOKEN
 
       const { parseTokensFromEnv } = require("../../src/lib/token-parser")
       const result = parseTokensFromEnv()
@@ -229,12 +229,12 @@ describe("Token Parser", () => {
   })
 
   describe("loadTokensFromFile", () => {
-    test("should load tokens from file when GITHUB_TOKENS_FILE is set", async () => {
+    test("should load tokens from file when GH_TOKENS_FILE is set", async () => {
       // This test would need file system mocking
       const mockReadFile = require("../../src/lib/token-parser").__mockReadFile
       mockReadFile.mockResolvedValue("alice:token1\nbob:token2")
 
-      process.env.GITHUB_TOKENS_FILE = "/path/to/tokens.txt"
+      process.env.GH_TOKENS_FILE = "/path/to/tokens.txt"
 
       const { loadTokensFromFile } = require("../../src/lib/token-parser")
       const result = await loadTokensFromFile()
@@ -245,8 +245,8 @@ describe("Token Parser", () => {
       ])
     })
 
-    test("should return empty array when GITHUB_TOKENS_FILE is not set", async () => {
-      delete process.env.GITHUB_TOKENS_FILE
+    test("should return empty array when GH_TOKENS_FILE is not set", async () => {
+      delete process.env.GH_TOKENS_FILE
 
       const { loadTokensFromFile } = require("../../src/lib/token-parser")
       const result = await loadTokensFromFile()
@@ -258,7 +258,7 @@ describe("Token Parser", () => {
       const mockReadFile = require("../../src/lib/token-parser").__mockReadFile
       mockReadFile.mockRejectedValue(new Error("File not found"))
 
-      process.env.GITHUB_TOKENS_FILE = "/path/to/nonexistent.txt"
+      process.env.GH_TOKENS_FILE = "/path/to/nonexistent.txt"
 
       const { loadTokensFromFile } = require("../../src/lib/token-parser")
 
@@ -289,9 +289,9 @@ describe("Token Parser", () => {
   })
 
   describe("Integration with environment and file", () => {
-    test("should prioritize GITHUB_TOKENS over GITHUB_TOKENS_FILE", async () => {
-      process.env.GITHUB_TOKENS = "env:token1"
-      process.env.GITHUB_TOKENS_FILE = "/path/to/file"
+    test("should prioritize GH_TOKENS over GH_TOKENS_FILE", async () => {
+      process.env.GH_TOKENS = "env:token1"
+      process.env.GH_TOKENS_FILE = "/path/to/file"
 
       const mockReadFile = require("../../src/lib/token-parser").__mockReadFile
       mockReadFile.mockResolvedValue("file:token2")
@@ -302,9 +302,9 @@ describe("Token Parser", () => {
       expect(result).toEqual([{ label: "env", token: "token1" }])
     })
 
-    test("should fall back to GITHUB_TOKENS_FILE when GITHUB_TOKENS is not set", async () => {
-      delete process.env.GITHUB_TOKENS
-      process.env.GITHUB_TOKENS_FILE = "/path/to/file"
+    test("should fall back to GH_TOKENS_FILE when GH_TOKENS is not set", async () => {
+      delete process.env.GH_TOKENS
+      process.env.GH_TOKENS_FILE = "/path/to/file"
 
       const mockReadFile = require("../../src/lib/token-parser").__mockReadFile
       mockReadFile.mockResolvedValue("file:token1")
@@ -315,10 +315,10 @@ describe("Token Parser", () => {
       expect(result).toEqual([{ label: "file", token: "token1" }])
     })
 
-    test("should fall back to GITHUB_TOKEN when no other sources available", async () => {
-      delete process.env.GITHUB_TOKENS
-      delete process.env.GITHUB_TOKENS_FILE
-      process.env.GITHUB_TOKEN = "fallback-token"
+    test("should fall back to GH_TOKEN when no other sources available", async () => {
+      delete process.env.GH_TOKENS
+      delete process.env.GH_TOKENS_FILE
+      process.env.GH_TOKEN = "fallback-token"
 
       const { getAllTokens } = require("../../src/lib/token-parser")
       const result = await getAllTokens()
